@@ -87,9 +87,18 @@ td input{padding:4px 6px;border-radius:6px}
 </div>
 
 <div id="app" style="display:none">
-  <div id="stats"></div>
-  <div id="filters"></div>
-  <div id="grid"></div>
+  <div id="tabs" style="display:flex;gap:8px;padding:0 22px 10px">
+    <button class="chip on" data-tab="accounts" onclick="switchTab('accounts')">👥 <span data-i18n="t_acc">账号</span></button>
+    <button class="chip" data-tab="works" onclick="switchTab('works')">🎬 <span data-i18n="t_works">作品</span></button>
+    <button class="chip" data-tab="research" onclick="switchTab('research')">🔬 <span data-i18n="t_res">研究</span></button>
+  </div>
+  <div id="view-accounts">
+    <div id="stats"></div>
+    <div id="filters"></div>
+    <div id="grid"></div>
+  </div>
+  <div id="view-works" style="display:none;padding:0 22px 60px"></div>
+  <div id="view-research" style="display:none;padding:0 22px 60px"></div>
 </div>
 
 <div id="ovl" onclick="if(event.target===this)closeAcc()">
@@ -102,6 +111,9 @@ td input{padding:4px 6px;border-radius:6px}
 let lang=(()=>{try{return localStorage.getItem("pha-lang")==="en"?"en":"zh"}catch(e){return "zh"}})();
 const DICT={
   title:["媒体台账","Media Ops"],unsaved:["● 未保存","● Unsaved"],add:["＋ 新增账号","＋ New account"],workflow:["工作流","Workflow"],
+  t_acc:["账号","Accounts"],t_works:["作品","Works"],t_res:["研究","Research"],
+  w_none:["尚无作品记录（由蜂群 sync-ops 同步）","No works yet (synced by swarm)"],
+  r_none:["尚无研究记录","No research yet"],
   save:["保存","Save"],connect:["连接","Connect"],all:["全部","All"],
   st_planning:["筹备","Planning"],st_active:["运营中","Active"],st_paused:["暂停","Paused"],st_dead:["停更","Dead"],
   k_text:["图文","Posts"],k_video:["视频","Video"],k_mixed:["混合","Mixed"],
@@ -132,8 +144,54 @@ const curMonth=()=>new Date().toISOString().slice(0,7);
 const today=()=>new Date().toISOString().slice(0,10);
 const fmtY=n=>"¥"+((+n||0).toLocaleString());
 
-let S={cfg:null,data:null,sha:null,dirty:false};
+let S={cfg:null,data:null,sha:null,dirty:false,work:null};
 let filter={platform:"",status:""};
+
+/* ═══ 作品/研究页签（蜂群留痕，只读；数据=media-ops-work.json 由 sync-ops 同步）═══ */
+function switchTab(t){
+  document.querySelectorAll("#tabs .chip").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  for(const v of ["accounts","works","research"])
+    document.getElementById("view-"+v).style.display=(v===t?"":"none");
+  if(t!=="accounts"&&!S.work)loadWork();
+}
+async function loadWork(){
+  try{
+    const {owner,repo}=S.cfg;
+    const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/media-ops-work.json?_=${Date.now()}`);
+    S.work=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(f.content.replace(/\n/g,"")),c=>c.charCodeAt(0))));
+  }catch(e){S.work={works:[],research:[],experiments:[]};}
+  renderWork();
+}
+function renderWork(){
+  const w=S.work||{works:[],research:[],experiments:[]};
+  const expMap={};(w.experiments||[]).forEach(e=>expMap[e.exp_id]=e);
+  const vIcon={hit:"🔥",mid:"➖",flop:"🥶",nuked:"☠️"};
+  document.getElementById("view-works").innerHTML=
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">蜂群自产内容全留痕 · 更新 ${esc(w.updatedAt||"-")}（只读，数据来自生产账本）</div>`+
+    ((w.works||[]).length?w.works.slice().reverse().map(v=>{
+      const p=v.process||{};
+      const trace=[p.research_pack?"📚资料包":null,p.script_review?("✍️"+p.script_review):null,
+                   p.image_qc?("🛡"+p.image_qc):null,p.evidence_cards?("📎证据卡×"+p.evidence_cards):null]
+                  .filter(Boolean).join(" · ");
+      const exp=v.exp_id&&expMap[v.exp_id]?` <span class="badge">${esc(v.exp_id)}</span>`:"";
+      return `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <b>${esc(v.topic)}</b>
+          <span class="badge">@${esc(v.channel_id)}</span>
+          <span class="badge">${v.type==="bili_video"?"视频":"图文"}</span>${exp}
+          <span style="margin-left:auto;color:var(--muted);font-size:13px">¥${v.prod_cost_est_cny??"-"} · ${esc(v.created_at||"")}
+          ${v.verdict?(" · "+(vIcon[v.verdict]||"")+esc(v.verdict)):""}</span>
+        </div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px">模块：${(v.modules_used||[]).map(esc).join(" ")}${trace?("<br>过程："+trace):""}</div>
+      </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
+  document.getElementById("view-research").innerHTML=
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录）</div>`+
+    ((w.research||[]).length?w.research.slice().reverse().map(r=>
+      `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center"><span class="badge">${esc(r.kind)}</span><b>${esc(r.title)}</b></div>
+        ${r.summary?`<div style="color:var(--muted);font-size:13px;margin-top:6px">${esc(r.summary)}</div>`:""}
+      </div>`).join(""):`<div class="card">${T("r_none")}</div>`);
+}
 
 function mkData(){return {meta:{version:1,last_updated:today()},accounts:[]}}
 function markDirty(){S.dirty=true;document.getElementById("dirty").style.display="inline";try{localStorage.setItem("mediaops_cache",JSON.stringify(S.data))}catch(e){}}
