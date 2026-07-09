@@ -71,6 +71,7 @@ td input{padding:4px 6px;border-radius:6px}
   <h1 data-i18n="title">媒体台账</h1>
   <span id="dirty" data-i18n="unsaved">● 未保存</span>
   <span class="spacer"></span>
+  <a class="btn" href="workflow.html" style="text-decoration:none" title="站长工作流 & 蜂群架构">📋 <span data-i18n="workflow">工作流</span></a>
   <button class="btn primary" onclick="openAcc(null)" data-i18n="add">＋ 新增账号</button>
   <button class="btn" onclick="ghSave()" data-i18n="save">保存</button>
   <button class="btn" onclick="toggleCfg()">⚙️</button>
@@ -100,7 +101,7 @@ td input{padding:4px 6px;border-radius:6px}
 /* ═══ 双语（与导航站共享 pha-lang）；存储枚举值不译，只译显示 ═══ */
 let lang=(()=>{try{return localStorage.getItem("pha-lang")==="en"?"en":"zh"}catch(e){return "zh"}})();
 const DICT={
-  title:["媒体台账","Media Ops"],unsaved:["● 未保存","● Unsaved"],add:["＋ 新增账号","＋ New account"],
+  title:["媒体台账","Media Ops"],unsaved:["● 未保存","● Unsaved"],add:["＋ 新增账号","＋ New account"],workflow:["工作流","Workflow"],
   save:["保存","Save"],connect:["连接","Connect"],all:["全部","All"],
   st_planning:["筹备","Planning"],st_active:["运营中","Active"],st_paused:["暂停","Paused"],st_dead:["停更","Dead"],
   k_text:["图文","Posts"],k_video:["视频","Video"],k_mixed:["混合","Mixed"],
