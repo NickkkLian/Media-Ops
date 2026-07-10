@@ -194,18 +194,22 @@ ul{padding-left:22px} li{margin:5px 0}
 <div class="card">
 <ol class="tl">
   <li><span class="n you">你</span><b>👑 你：丢选题</b><small>「做一支《暴风雪山庄：侦探为什么总被困在孤岛》」</small></li>
-  <li><span class="n brain">脑</span><b>🧠 主脑：建档派单</b><small>写入任务队列（绑定账号档案的模块组合与画风）；涉真实案件时先联网做资料包锁事实来源 → <code>state.json</code> <code>research.md</code></small></li>
-  <li><span class="n agent">A1</span><b>✍️ 脚本 agent（写→审→改）</b><small>读 账号档案+模块指令+平台要点+资料包 → 写解说与分镜 → 内置审稿人过四关（事实/钩子/推进/画面可实现）→ 有硬伤自动修订 → <code>script.json</code>（含每段解说、画面描述、素材来源标记、封面底图段号）</small></li>
-  <li><span class="n agent">A2</span><b>🎞 素材 agent（标了 stock 的段）</b><small>读 A1 的画面描述 → 译英文检索词 → 素材库（新鲜度规则：没人看过的才直接用）→ 不够就抓 Pexels 新素材 → <code>videos/NNN.mp4</code>；找不到的段交给 A3</small></li>
-  <li><span class="n agent">A3</span><b>🎨 生图 agent（Seedream）</b><small>剩余段按「画面描述+账号画风+主角参考图」生图 → <code>images/NNN.png</code></small></li>
-  <li><span class="n agent">A4</span><b>🛡 质检 agent（真自主循环）</b><small>读 A1 的分镜描述逐张审 A3 的图（文字乱入/肢体畸变/与分镜不符）→ 不过关<b>自己改写提示词</b>调 Seedream 重生成 → 复审，每张≤2轮 → <code>image_qc_report.json</code></small></li>
-  <li><span class="n agent">A5</span><b>🎬 动画 agent（Seedance）</b><small>读 A4 放行的图作首帧 → 图生视频变真动态画面（full 模式全段）→ <code>videos/NNN.mp4</code>；失败自动回退动效图不卡线</small></li>
-  <li><span class="n agent">A6</span><b>🔊 合成 agent（本地零成本）</b><small>汇集 A1 的解说 + A2/A3/A4/A5 的画面 → 逐段配音 → 逐句字幕对齐时间轴 → 一图多镜快切/真视频铺满 → 证据卡叠加 → BGM 混音+响度规范 → <code>final.mp4</code> <code>subtitles.srt</code></small></li>
-  <li><span class="n agent">A7</span><b>🖼 封面 agent</b><small>读 A1 选的强意象段底图 + 封面大字 → 渐变压暗+自动排版+强调色 → <code>cover_final.png</code></small></li>
-  <li><span class="n brain">脑</span><b>🧠 主脑：验收打包</b><small>查各环节报告与成片抽帧 → 异常打回对应 agent 断点重跑 → 通过则打包（成片+封面+SRT+分区推荐+发布指引）并自动登记账本（模块指纹/成本/实验归属）、留痕进台账 → <code>发布包/</code> <code>ledger.json</code></small></li>
+  <li><span class="n brain">脑</span><b>🧠 主脑：建档派单</b> <span class="badge">Claude（Opus/Fable）</span><small>写入任务队列（绑定账号档案的模块组合与画风）；涉真实案件时先联网做资料包锁事实来源 → <code>state.json</code> <code>research.md</code></small></li>
+  <li><span class="n agent">A1</span><b>✍️ 脚本 agent</b> <span class="badge">DeepSeek V3 ×2-3次</span><small>读 账号档案+模块指令+平台要点+资料包 → 写解说与分镜 → 内置审稿人过四关（事实/钩子/推进/画面可实现）→ 有硬伤自动修订 → <code>script.json</code>（含每段解说、画面描述、素材来源标记、封面底图段号）</small></li>
+  <li><span class="n agent">A2</span><b>🎞 素材 agent</b> <span class="badge">DeepSeek译词 + Pexels API</span> <span class="badge" style="color:var(--green)">‖ 与A3并行</span><small>处理 A1 标 stock 的段：译英文检索词 → 素材库（新鲜度规则）→ 不够抓 Pexels → <code>videos/NNN.mp4</code>；找不到的段交给 A3</small></li>
+  <li><span class="n agent">A3</span><b>🎨 生图 agent</b> <span class="badge">Doubao Seedream 5.0</span> <span class="badge" style="color:var(--green)">段间 4 路并发</span><small>剩余段按「画面描述+账号画风+主角参考图」生图 → <code>images/NNN.png</code></small></li>
+  <li><span class="n agent">A4</span><b>🛡 质检 agent（真自主循环）</b> <span class="badge">Doubao Seed 2.1 视觉评审 + Seedream 重生成</span><small>读 A1 分镜逐张审 A3 的图（文字乱入/肢体畸变/与分镜不符）→ 不过关<b>自己改写提示词</b>重生成 → 复审，每张≤2轮 → <code>image_qc_report.json</code>（依赖 A3 完成，串行关口）</small></li>
+  <li><span class="n agent">A5</span><b>🎬 动画 agent</b> <span class="badge">Doubao Seedance 2.0</span> <span class="badge" style="color:var(--green)">全段一次提交·统一轮询（N段≈1段耗时）</span><small>读 A4 放行的图作首帧 → 图生视频（full 模式全段）→ <code>videos/NNN.mp4</code>；失败自动回退动效图不卡线</small></li>
+  <li><span class="n agent">A6</span><b>🔊 合成 agent</b> <span class="badge">edge-tts + ffmpeg（无LLM）</span> <span class="badge" style="color:var(--green)">配音4路并发·编码3路并行·‖ 与A7并行</span><small>汇集 A1 解说 + A2/A3/A4/A5 画面 → 配音 → 逐句字幕 → 快切/真视频铺满 → 证据卡 → BGM+响度规范 → <code>final.mp4</code> <code>subtitles.srt</code>（实测 9 段 4 秒编完）</small></li>
+  <li><span class="n agent">A7</span><b>🖼 封面 agent</b> <span class="badge">本地渲染（无LLM）</span><small>读 A1 选的强意象段底图 + 封面大字 → 渐变压暗+自动排版+强调色 → <code>cover_final.png</code></small></li>
+  <li><span class="n brain">脑</span><b>🧠 主脑：验收打包</b> <span class="badge">Claude（Opus/Fable）</span><small>查各环节报告与成片抽帧 → 异常打回对应 agent 断点重跑 → 通过则打包（成片+封面+SRT+分区推荐+发布指引）并自动登记账本（模块指纹/成本/实验归属）、留痕进台账 → <code>发布包/</code> <code>ledger.json</code></small></li>
   <li><span class="n you">你</span><b>👑 你：终审发布</b><small>看成片 → 满意就传 B站（勾 AIGC 声明）→ <code>published</code>；下周报数据 → 战绩回填模块库，蜂群变得更聪明</small></li>
 </ol>
-<div class="note">其他产线只是换零件：喜鹊周报把第 2 步换成「新闻收集+双源验证」；思想引擎把第 2 步换成「思想匹配（谁会想发言）」；图文线在第 3 步后直接走模板渲染+违禁词质检。骨架一致。</div>
+<div class="note"><b>依赖图（不是纯线性）</b>：A1 → <b>(A2 ‖ A3)</b> → A4 → A5 → <b>(A6 ‖ A7)</b> → 打包。
+质检 A4 是刻意的串行关口（画面全过审才准动画化，省 Seedance 的钱）。agent 内部也并行：
+生图 4 路并发、Seedance 全段一次提交统一轮询、配音 4 路、编码 3 路（9 段实测 4 秒）。
+跨任务并行（多支视频同时跑）在无人值守调度层实现（任务 #10）。<br>
+其他产线只是换零件：喜鹊周报把第 2 步换成「新闻收集+双源验证」；思想引擎换成「思想匹配（谁会想发言）」；图文线在 A1 后直接走模板渲染+违禁词质检。骨架一致。</div>
 </div>
 
 <h2>三、账号矩阵（8 个）</h2>
