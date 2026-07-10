@@ -3,228 +3,207 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>站长工作流 · Media Swarm 蜂群架构</title>
+<title>站长工作流 · Media Swarm 蜂群架构 v2</title>
 <style>
 :root{
-  --bg:#F7F6F3; --card:#FFF; --ink:#1F1D1A; --muted:#8A857C; --line:#E8E4DC;
-  --accent:#C4552A; --blue:#3D6B9E; --green:#2E7D52; --warn:#B7791F; --panel:#F0EBE2;
-}
-@media(prefers-color-scheme:dark){
-  :root{--bg:#16181D;--card:#1F2229;--ink:#F2F3F5;--muted:#8A8F99;--line:#2E333D;--panel:#262B34;}
+  --bg:#F7F6F3; --card:#FFFFFF; --ink:#1F1D1A; --muted:#8A857C; --line:#E8E4DC;
+  --accent:#C4552A; --blue:#3D6B9E; --green:#2E7D52; --violet:#7A5CA8; --warn:#B7791F;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.7;padding-bottom:80px}
-.wrap{max-width:920px;margin:0 auto;padding:0 20px}
-header{padding:48px 0 8px;text-align:center}
-header h1{font-size:30px;letter-spacing:2px}
-header p{color:var(--muted);margin-top:8px}
-h2{font-size:21px;margin:52px 0 6px;padding-left:12px;border-left:5px solid var(--accent)}
-h2+p.sub{color:var(--muted);font-size:14px;margin-bottom:16px;padding-left:17px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-top:14px}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+header{padding:46px 0 6px;text-align:center}
+header h1{font-size:29px;letter-spacing:2px}
+header p{color:var(--muted);margin-top:8px;font-size:14.5px}
+h2{font-size:20px;margin:50px 0 6px;padding-left:12px;border-left:5px solid var(--accent)}
+h2+p.sub{color:var(--muted);font-size:13.5px;margin-bottom:14px;padding-left:17px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:12px}
 .svgbox{overflow-x:auto}
-svg{width:100%;height:auto;min-width:640px;display:block}
+svg{width:100%;height:auto;min-width:700px;display:block}
 svg text{font-family:-apple-system,"PingFang SC",sans-serif}
-/* 步骤条 */
-.steps{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin-top:10px}
-.step{flex:1;min-width:118px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px;position:relative;margin:6px 14px 6px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12.5px}
+.badge{font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.steps{display:flex;flex-wrap:wrap;gap:0;align-items:stretch;margin-top:8px}
+.step{flex:1;min-width:112px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;position:relative;margin:6px 14px 6px 0}
 .step:after{content:"→";position:absolute;right:-15px;top:50%;transform:translateY(-50%);color:var(--accent);font-weight:700}
 .step:last-child:after{content:""}
-.step .who{font-size:11.5px;padding:1px 8px;border-radius:99px;display:inline-block;margin-bottom:6px;font-weight:600}
+.step .who{font-size:11px;padding:1px 8px;border-radius:99px;display:inline-block;margin-bottom:5px;font-weight:600}
 .who.you{background:rgba(196,85,42,.12);color:var(--accent)}
 .who.ai{background:rgba(61,107,158,.14);color:var(--blue)}
-.step b{display:block;font-size:14.5px;margin-bottom:2px}
-.step small{color:var(--muted);font-size:12.5px;line-height:1.5;display:block}
-/* 表格 */
-table{width:100%;border-collapse:collapse;font-size:14.5px}
-th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:500;font-size:13px}
-td b{color:var(--accent)}
-.tag{font-size:12px;background:var(--panel);border-radius:99px;padding:1px 9px;color:var(--muted);white-space:nowrap}
-ul{padding-left:22px}
-li{margin:6px 0}
-.note{background:var(--panel);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--muted);margin-top:14px}
-.foot{text-align:center;color:var(--muted);font-size:13px;margin-top:70px}
-a{color:var(--blue)}
+.step b{display:block;font-size:14px;margin-bottom:2px}
+.step small{color:var(--muted);font-size:12px;line-height:1.5;display:block}
+ul{padding-left:22px} li{margin:5px 0}
+.note{background:#F0EBE2;border-radius:10px;padding:11px 15px;font-size:13.5px;color:var(--muted);margin-top:12px}
+.foot{text-align:center;color:var(--muted);font-size:13px;margin-top:66px}
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header>
-  <h1>🐝 你的工作流 &amp; 蜂群架构</h1>
-  <p>Media Swarm · 你只做四件事，其余交给蜂群 · 2026-07 v1（对应蓝图 v1.2）</p>
+  <h1>🐝 你的工作流 &amp; 蜂群架构 v2</h1>
+  <p>Media Swarm · 8 账号 / 5 平台手册 / 26 模块 / 26 技能 / 3 类画面来源 · 2026-07 · 对应蓝图 v1.3+</p>
 </header>
 
-<h2>一、蜂群架构总览</h2>
-<p class="sub">agent 互不聊天，全部通过「产物黑板」（文件）协作；主脑只读技能索引和契约，永不碰全文——上下文永远不爆</p>
+<h2>一、蜂群总架构（四层）</h2>
+<p class="sub">上层学打法、中层存资产、流水线生产、底层关口与数据回流——四层靠文件（黑板）衔接，agent 互不聊天</p>
 <div class="card svgbox">
-<svg viewBox="0 0 920 640" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 960 800" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#C4552A"/>
-    </marker>
+      <path d="M0,0 L10,5 L0,10 z" fill="#C4552A"/></marker>
     <marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#3D6B9E"/>
-    </marker>
+      <path d="M0,0 L10,5 L0,10 z" fill="#3D6B9E"/></marker>
   </defs>
   <style>
-    .box{fill:var(--card);stroke:var(--line);stroke-width:1.5;rx:12}
-    .t{fill:var(--ink);font-size:15px;font-weight:700}
-    .s{fill:var(--muted);font-size:11.5px}
+    .band{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+    .bx{fill:var(--bg);stroke:var(--line);stroke-width:1.2}
+    .t{fill:var(--ink);font-size:13.5px;font-weight:700}
+    .tt{fill:var(--ink);font-size:15px;font-weight:800}
+    .s{fill:var(--muted);font-size:11px}
     .flow{stroke:#C4552A;stroke-width:2;fill:none;marker-end:url(#ar)}
     .fb{stroke:#3D6B9E;stroke-width:1.8;fill:none;stroke-dasharray:6 5;marker-end:url(#arb)}
-    .lbl{fill:#C4552A;font-size:11.5px;font-weight:600}
-    .lblb{fill:#3D6B9E;font-size:11.5px;font-weight:600}
+    .lbl{fill:#C4552A;font-size:11px;font-weight:600}
+    .lblb{fill:#3D6B9E;font-size:11px;font-weight:600}
   </style>
 
-  <!-- 站长 -->
-  <rect x="330" y="18" width="260" height="64" rx="14" fill="rgba(196,85,42,.10)" stroke="#C4552A" stroke-width="2"/>
-  <text x="460" y="45" text-anchor="middle" class="t">👑 站长（你）</text>
-  <text x="460" y="66" text-anchor="middle" class="s">拍板 · 投喂参考 · 点发布 · 记台账</text>
+  <!-- 学习回路层 -->
+  <rect x="10" y="14" width="940" height="108" rx="14" fill="rgba(122,92,168,.07)" stroke="#7A5CA8"/>
+  <text x="30" y="40" class="tt" fill="#7A5CA8">🎓 学习回路（打法从哪来）</text>
+  <rect x="30" y="54" width="212" height="52" rx="10" class="bx"/>
+  <text x="136" y="76" text-anchor="middle" class="t">🔬 对标拆解</text>
+  <text x="136" y="94" text-anchor="middle" class="s">拆片+弹幕曲线+封面/分区 · 只拆2026+</text>
+  <rect x="256" y="54" width="180" height="52" rx="10" class="bx"/>
+  <text x="346" y="76" text-anchor="middle" class="t">🎨 风格分析</text>
+  <text x="346" y="94" text-anchor="middle" class="s">投喂参考博主→风格档案</text>
+  <rect x="450" y="54" width="180" height="52" rx="10" class="bx"/>
+  <text x="540" y="76" text-anchor="middle" class="t">📖 方法论手册</text>
+  <text x="540" y="94" text-anchor="middle" class="s">起号SOP·甄别卖课/过时</text>
+  <rect x="644" y="54" width="286" height="52" rx="10" class="bx"/>
+  <text x="787" y="76" text-anchor="middle" class="t">♻️ 周复盘仪式</text>
+  <text x="787" y="94" text-anchor="middle" class="s">填数据→verdict→模块战绩回填→实验判定→拆新对标</text>
 
-  <!-- 主脑 -->
-  <rect x="310" y="128" width="300" height="70" class="box" rx="14"/>
-  <text x="460" y="155" text-anchor="middle" class="t">🧠 主脑 Claude（Opus/Fable）</text>
-  <text x="460" y="176" text-anchor="middle" class="s">读蓝图+状态 → 派单 → 报错协调 → 验收抽审</text>
+  <!-- 资产层 -->
+  <rect x="10" y="146" width="940" height="108" rx="14" fill="rgba(46,125,82,.06)" stroke="#2E7D52"/>
+  <text x="30" y="172" class="tt" fill="#2E7D52">🧰 资产层（越用越值钱）</text>
+  <rect x="30" y="186" width="152" height="52" rx="10" class="bx"/>
+  <text x="106" y="208" text-anchor="middle" class="t">🧩 模块库×26</text>
+  <text x="106" y="226" text-anchor="middle" class="s">钩子/结构/声音/视觉/节奏 带战绩分</text>
+  <rect x="194" y="186" width="140" height="52" rx="10" class="bx"/>
+  <text x="264" y="208" text-anchor="middle" class="t">🐦 主角资产×5</text>
+  <text x="264" y="226" text-anchor="middle" class="s">参考图跨镜一致</text>
+  <rect x="346" y="186" width="150" height="52" rx="10" class="bx"/>
+  <text x="421" y="208" text-anchor="middle" class="t">🎞 素材库</text>
+  <text x="421" y="226" text-anchor="middle" class="s">自生长·新鲜度优先防回音室</text>
+  <rect x="508" y="186" width="140" height="52" rx="10" class="bx"/>
+  <text x="578" y="208" text-anchor="middle" class="t">🌐 平台手册×5</text>
+  <text x="578" y="226" text-anchor="middle" class="s">B站/小红书/抖音/YT/X</text>
+  <rect x="660" y="186" width="130" height="52" rx="10" class="bx"/>
+  <text x="725" y="208" text-anchor="middle" class="t">👥 账号档案×8</text>
+  <text x="725" y="226" text-anchor="middle" class="s">定位/模块/节奏/模式</text>
+  <rect x="802" y="186" width="128" height="52" rx="10" class="bx"/>
+  <text x="866" y="208" text-anchor="middle" class="t">🧠 名人库+议题库</text>
+  <text x="866" y="226" text-anchor="middle" class="s">匿名思想引擎弹药</text>
 
-  <!-- 技能三层 侧栏 -->
-  <rect x="680" y="118" width="222" height="128" rx="12" fill="var(--panel)" stroke="var(--line)"/>
-  <text x="791" y="142" text-anchor="middle" class="t" font-size="13">📚 技能三层加载</text>
-  <text x="700" y="162" class="s">L1 索引（主脑常驻）· L2 契约（派单读）</text>
-  <text x="700" y="184" class="s">L3 全文（只有执行agent读）</text>
-  <text x="700" y="206" class="s">平台手册：B站/小红书/抖音/YT 分开注入</text>
-  <text x="700" y="228" class="s" fill="#C4552A">主角资产：固定形象参考图跨镜一致</text>
+  <!-- 生产流水线 -->
+  <rect x="10" y="278" width="940" height="252" rx="14" fill="rgba(196,85,42,.05)" stroke="#C4552A"/>
+  <text x="30" y="304" class="tt" fill="#C4552A">🏭 生产流水线（run.py 状态机 · 断点续跑 · 重试≤2熔断）</text>
+  <rect x="30" y="318" width="130" height="56" rx="10" class="bx"/>
+  <text x="95" y="340" text-anchor="middle" class="t">📋 选题池</text>
+  <text x="95" y="358" text-anchor="middle" class="s">热榜×定位×想法库</text>
+  <rect x="176" y="318" width="168" height="56" rx="10" class="bx"/>
+  <text x="260" y="336" text-anchor="middle" class="t">📚 资料包</text>
+  <text x="260" y="352" text-anchor="middle" class="s">选题研究·新闻双源验证</text>
+  <text x="260" y="366" text-anchor="middle" class="s">思想匹配（谁会想发言）</text>
+  <rect x="360" y="318" width="168" height="56" rx="10" class="bx"/>
+  <text x="444" y="336" text-anchor="middle" class="t">✍️ 脚本 agent</text>
+  <text x="444" y="352" text-anchor="middle" class="s">模块组装+平台注入</text>
+  <text x="444" y="366" text-anchor="middle" class="s">写→审→改（防编造）</text>
+  <rect x="544" y="318" width="200" height="56" rx="10" class="bx"/>
+  <text x="644" y="336" text-anchor="middle" class="t">🎨 画面（三来源）</text>
+  <text x="644" y="352" text-anchor="middle" class="s">实拍素材(免费)·Seedream图</text>
+  <text x="644" y="366" text-anchor="middle" class="s">Seedance真视频(full模式)</text>
+  <rect x="760" y="318" width="170" height="56" rx="10" class="bx"/>
+  <text x="845" y="336" text-anchor="middle" class="t">🛡 质检 agent</text>
+  <text x="845" y="352" text-anchor="middle" class="s">视觉评审→改词重生→复审</text>
+  <text x="845" y="366" text-anchor="middle" class="s">每张≤2轮熔断</text>
+  <rect x="120" y="410" width="240" height="56" rx="10" class="bx"/>
+  <text x="240" y="428" text-anchor="middle" class="t">🎬 合成</text>
+  <text x="240" y="444" text-anchor="middle" class="s">一图多镜快切·逐句字幕·SRT</text>
+  <text x="240" y="458" text-anchor="middle" class="s">BGM混音·响度规范·证据卡</text>
+  <rect x="392" y="410" width="180" height="56" rx="10" class="bx"/>
+  <text x="482" y="428" text-anchor="middle" class="t">🖼 封面 agent</text>
+  <text x="482" y="446" text-anchor="middle" class="s">强意象底图+自动排版大字</text>
+  <rect x="604" y="410" width="220" height="56" rx="10" fill="rgba(46,125,82,.1)" stroke="#2E7D52" stroke-width="1.6"/>
+  <text x="714" y="428" text-anchor="middle" class="t">📦 发布包</text>
+  <text x="714" y="446" text-anchor="middle" class="s">成片+封面+SRT+分区推荐+指引</text>
+  <text x="480" y="502" text-anchor="middle" class="s" font-size="12">画面失败自动回退 · 每件产出自动登记账本（模块指纹+成本+实验归属）· 全过程留痕进台账「作品」页签</text>
 
-  <!-- 状态机 -->
-  <rect x="330" y="238" width="260" height="58" class="box"/>
-  <text x="460" y="262" text-anchor="middle" class="t">⚙️ 状态机 run.py</text>
-  <text x="460" y="282" text-anchor="middle" class="s">每步落盘 · 断点续跑 · 重试≤2（成本护栏）</text>
-
-  <!-- agents row -->
-  <g>
-    <rect x="18"  y="346" width="136" height="62" class="box"/>
-    <text x="86"  y="371" text-anchor="middle" class="t" font-size="13.5">✍️ 文案/脚本</text>
-    <text x="86"  y="391" text-anchor="middle" class="s">DeepSeek·自查循环</text>
-    <rect x="168" y="346" width="136" height="62" class="box"/>
-    <text x="236" y="371" text-anchor="middle" class="t" font-size="13.5">🖼 图卡渲染</text>
-    <text x="236" y="391" text-anchor="middle" class="s">本地模板 ¥0</text>
-    <rect x="318" y="346" width="136" height="62" class="box"/>
-    <text x="386" y="371" text-anchor="middle" class="t" font-size="13.5">🎨 AI 画面</text>
-    <text x="386" y="391" text-anchor="middle" class="s">火山方舟 ~¥0.2/张</text>
-    <rect x="468" y="346" width="136" height="62" class="box"/>
-    <text x="536" y="371" text-anchor="middle" class="t" font-size="13.5">🎙 配音</text>
-    <text x="536" y="391" text-anchor="middle" class="s">edge-tts ¥0</text>
-    <rect x="618" y="346" width="136" height="62" class="box"/>
-    <text x="686" y="371" text-anchor="middle" class="t" font-size="13.5">🎬 剪辑合成</text>
-    <text x="686" y="391" text-anchor="middle" class="s">ffmpeg ¥0</text>
-    <rect x="768" y="346" width="136" height="62" class="box"/>
-    <text x="836" y="371" text-anchor="middle" class="t" font-size="13.5">🔬 对标拆解</text>
-    <text x="836" y="391" text-anchor="middle" class="s">拆片+弹幕曲线+归因</text>
-  </g>
-
-  <!-- 产物黑板 -->
-  <rect x="60" y="456" width="800" height="66" rx="12" fill="rgba(61,107,158,.08)" stroke="#3D6B9E" stroke-width="1.5"/>
-  <text x="460" y="481" text-anchor="middle" class="t" font-size="14">🗂 产物黑板（agent 之间唯一的对话方式 = 文件）</text>
-  <text x="460" y="503" text-anchor="middle" class="s">蓝图 · 状态机 · 账号档案 · <tspan fill="#C4552A">模块库</tspan> · <tspan fill="#C4552A">视频账本</tspan> · <tspan fill="#C4552A">实验记录</tspan> · 脚本/分镜 · 图/音/视频 · 质检报告</text>
-
-  <!-- 质检 → 发布包 -->
-  <rect x="220" y="556" width="200" height="58" class="box"/>
-  <text x="320" y="580" text-anchor="middle" class="t" font-size="14">🛡 质检门（agent）</text>
-  <text x="320" y="600" text-anchor="middle" class="s">机器校验→视觉评审→自主返修</text>
-  <rect x="500" y="556" width="200" height="58" rx="12" fill="rgba(46,125,82,.10)" stroke="#2E7D52" stroke-width="1.8"/>
-  <text x="600" y="580" text-anchor="middle" class="t" font-size="14">📦 发布包</text>
-  <text x="600" y="600" text-anchor="middle" class="s">成片/图文+发布指引+AIGC提醒</text>
+  <!-- 关口与回流 -->
+  <rect x="10" y="554" width="940" height="96" rx="14" fill="rgba(61,107,158,.06)" stroke="#3D6B9E"/>
+  <text x="30" y="580" class="tt" fill="#3D6B9E">🚪 站长关口 &amp; 数据回流</text>
+  <rect x="30" y="592" width="270" height="46" rx="10" fill="rgba(196,85,42,.1)" stroke="#C4552A" stroke-width="1.6"/>
+  <text x="165" y="611" text-anchor="middle" class="t">👑 你：审片→发布（勾AIGC）</text>
+  <text x="165" y="628" text-anchor="middle" class="s">永远半自动 · 每天5-15分钟</text>
+  <rect x="330" y="592" width="280" height="46" rx="10" class="bx"/>
+  <text x="470" y="611" text-anchor="middle" class="t">📒 台账+账本+实验</text>
+  <text x="470" y="628" text-anchor="middle" class="s">周填数据·verdict·per-视频留痕可视化</text>
+  <rect x="640" y="592" width="290" height="46" rx="10" class="bx"/>
+  <text x="785" y="611" text-anchor="middle" class="t">📈 战绩回填</text>
+  <text x="785" y="628" text-anchor="middle" class="s">模块分进化·实验判定·题材加强/淘汰</text>
 
   <!-- 主流程箭头 -->
-  <path class="flow" d="M460 82 L460 128"/>
-  <text x="470" y="110" class="lbl">需求/选题</text>
-  <path class="flow" d="M460 198 L460 238"/>
-  <text x="470" y="224" class="lbl">派单</text>
-  <path class="flow" d="M380 296 L86 340"/>
-  <path class="flow" d="M420 296 L236 340"/>
-  <path class="flow" d="M460 296 L386 340"/>
-  <path class="flow" d="M500 296 L536 340"/>
-  <path class="flow" d="M540 296 L686 340"/>
-  <path class="flow" d="M580 296 L836 340"/>
-  <path class="flow" d="M86 408 L86 456"/>
-  <path class="flow" d="M236 408 L236 456"/>
-  <path class="flow" d="M386 408 L386 456"/>
-  <path class="flow" d="M536 408 L536 456"/>
-  <path class="flow" d="M686 408 L686 456"/>
-  <path class="flow" d="M836 408 L836 456"/>
-  <path class="flow" d="M320 522 L320 556"/>
-  <path class="flow" d="M420 585 L500 585"/>
-  <text x="432" y="578" class="lbl">通过</text>
+  <path class="flow" d="M480 122 L480 146"/>
+  <path class="flow" d="M480 254 L480 278"/>
+  <path class="flow" d="M160 346 L176 346"/><path class="flow" d="M344 346 L360 346"/>
+  <path class="flow" d="M528 346 L544 346"/><path class="flow" d="M744 346 L760 346"/>
+  <path class="flow" d="M845 374 C845 400 400 392 360 410"/>
+  <path class="flow" d="M360 438 L392 438"/><path class="flow" d="M572 438 L604 438"/>
+  <path class="flow" d="M714 466 C714 500 240 520 165 592"/>
+  <path class="flow" d="M300 615 L330 615"/><path class="flow" d="M610 615 L640 615"/>
+  <!-- 回流虚线 -->
+  <path class="fb" d="M930 592 C952 480 952 300 930 230"/>
+  <text x="905" y="420" class="lblb" transform="rotate(90 905 420)">数据回填资产层</text>
+  <path class="fb" d="M20 592 C0 400 0 160 30 100"/>
+  <text x="14" y="420" class="lblb" transform="rotate(-90 14 420)">复盘驱动再拆解</text>
 
-  <!-- 反馈回路（蓝色虚线） -->
-  <path class="fb" d="M700 570 C 890 560 912 300 902 260 C 895 235 880 225 862 220"/>
-  <text x="795" y="292" class="lblb" transform="rotate(0)">你发布 → 台账记数据</text>
-  <text x="770" y="318" class="lblb">对标拆解→模块库（学习回路）</text>
-  <path class="fb" d="M60 490 C 20 490 14 200 60 165 C 120 120 240 140 306 152"/>
-  <text x="26" y="330" class="lblb" transform="rotate(90 30 330)">数据反哺风格档案</text>
+  <!-- 底注 -->
+  <rect x="10" y="674" width="940" height="106" rx="14" class="band"/>
+  <text x="30" y="700" class="tt">⚖️ 不可越线（写死在代码与契约里）</text>
+  <text x="30" y="726" class="s" font-size="12.5">🚫 发布永远半自动（防封号）｜🚫 不抄清单：学打法不抄内容｜🚫 思想引擎匿名铁律：成片零人名零书名｜⚠️ AIGC声明必勾</text>
+  <text x="30" y="748" class="s" font-size="12.5">💰 月预算1000-5000：图文¥0.02 · 讲课¥0.05 · full真视频¥12-18/支 · 每步重试≤2熔断｜🕐 无人值守调度层=下一工程（任务#10）</text>
+  <text x="30" y="770" class="s" font-size="12.5">🧾 全过程留痕：台账 App「作品/研究」页签（自产与拆解分开记录）</text>
 </svg>
 </div>
-<div class="note">读法：橙色实线=生产流（自动），蓝色虚线=反馈回路（你的审美和发布数据流回账号/风格档案，蜂群越用越懂你）。任何一步挂了，状态机从断点续跑，不重烧钱。</div>
 
-<h2>二、你的日常：图文线（每天 5-10 分钟）</h2>
-<p class="sub">状态：✅ 已跑通，多账号多风格</p>
-<div class="steps">
-  <div class="step"><span class="who you">你</span><b>丢选题</b><small>「给知识号来一篇 XX」，可一次丢一批；不给选题时蜂群也能按账号定位自产</small></div>
-  <div class="step"><span class="who ai">蜂群</span><b>全自动生产</b><small>文案 → 图卡渲染 → 质检回炉 → 打包（约 2 分钟/篇，成本 ≈1 分钱）</small></div>
-  <div class="step"><span class="who you">你</span><b>过目 + 发布</b><small>打开发布包，图片文案复制进小红书，⚠️ 勾选 AI 声明，点发布</small></div>
-  <div class="step"><span class="who you">你</span><b>顺手反馈</b><small>「标题太营销腔」「配色换暗一点」——我沉淀进该账号档案，别的账号不受影响</small></div>
-</div>
-
-<h2>三、你的日常：视频线 P1c（每条参与约 20-30 分钟）</h2>
-<p class="sub">状态：🚧 搭建中 · 首发账号=悬案推理解密（对标大圆镜叙事）· 单条成本 10-30 元</p>
-<div class="steps">
-  <div class="step"><span class="who you">你</span><b>定选题</b><small>从诡计逻辑库挑，或我按赛道提案给你选</small></div>
-  <div class="step"><span class="who ai">蜂群</span><b>脚本+分镜</b><small>惊悚叙事结构解说词 + 每镜头画面描述（分镜表 JSON）</small></div>
-  <div class="step"><span class="who you">你</span><b>审脚本 ⏸</b><small>可选关口：前几期建议看一眼，稳定后跳过</small></div>
-  <div class="step"><span class="who ai">蜂群</span><b>画面/配音/合成</b><small>Seedream 出图 → 云健配音 → 字幕 → 运镜合成，全自动</small></div>
-  <div class="step"><span class="who you">你</span><b>看样片 + 发布</b><small>不满意说哪里（回炉只重做那一段）；满意就传 B 站，勾 AI 声明</small></div>
-</div>
-
-<h2>四、你的每周：台账 + 复盘（约 15 分钟）</h2>
-<div class="card">
-<ul>
-  <li>打开<b>媒体台账</b>（本站首页），给每个账号记一行月度数据：粉丝 / 发文 / 成本 / 收益；
-      「作品」页签看每件内容的全过程留痕，「研究」页签看拆解报告与资料包（分开记录）；</li>
-  <li>周复盘时蜂群会持续拆解各赛道头部新爆款（只拆 2026 及之后），把打法蒸馏进模块库并给出不抄清单——数据+对标双轮驱动风格进化；</li>
-  <li>告诉我哪几条内容数据好、哪几条扑了——我把有效特征写进风格档案，无效的删掉（<b>档案是活文档，数据说了算</b>）；</li>
-  <li>偶尔投喂：看到欣赏的博主，丢 3-5 篇链接/截图给我 → 风格分析 → 你确认后合并进账号档案。</li>
-</ul>
-</div>
-
-<h2>五、分工边界（谁干什么）</h2>
-<div class="card">
+<h2>二、账号矩阵（8 个）</h2>
+<div class="card" style="overflow-x:auto">
 <table>
-  <tr><th>事项</th><th>谁做</th><th>说明</th></tr>
-  <tr><td>选题、脚本、文案、画面、配音、剪辑、质检、打包</td><td><b>蜂群全自动</b></td><td><span class="tag">你不碰</span></td></tr>
-  <tr><td>拍板决策（赛道/预算/新产线）</td><td><b>你</b></td><td>我用选择题一次性列清，给推荐项</td></tr>
-  <tr><td>审美反馈 &amp; 投喂参考</td><td><b>你</b></td><td>你的品味是系统唯一学不来必须输入的东西</td></tr>
-  <tr><td>最后点发布（勾 AIGC 声明）</td><td><b>你</b></td><td>合规红线 + 天然人工抽检，绝不自动化</td></tr>
-  <tr><td>台账记数据</td><td><b>你</b></td><td>每周一次，喂给复盘</td></tr>
-  <tr><td>报错修复、外源技能引入、架构演进、devlog</td><td><b>主脑</b></td><td>你只会收到结果通报</td></tr>
+  <tr><th>账号</th><th>平台</th><th>定位</th><th>主角</th><th>形态/画面</th><th>节奏</th></tr>
+  <tr><td><b>喜鹊周报</b></td><td><span class="badge">B站</span></td><td>只报好事的周报（信源白名单+证据卡）</td><td>喜鹊小报（水彩）</td><td>真视频+插画 · 周报</td><td>固定周一</td></tr>
+  <tr><td><b>喜鹊周报·图文</b></td><td><span class="badge">小红书</span></td><td>本周好事清单（同资料包派生）</td><td>喜鹊小报</td><td>暖金图卡</td><td>周更</td></tr>
+  <tr><td><b>悬案推理号</b></td><td><span class="badge">B站</span></td><td>诡计/规则机制解密（诡计库弹药）</td><td>灯乌（提灯乌鸦）</td><td>暗调电影 · 真视频</td><td>周更2</td></tr>
+  <tr><td><b>脑洞实验号</b></td><td><span class="badge">B站</span></td><td>历史穿越/职业模拟/城市今昔</td><td>小鸥（海鸥）</td><td>明亮插画 · 真视频</td><td>周更2-3</td></tr>
+  <tr><td><b>语言文化号</b></td><td><span class="badge">B站</span></td><td>词义演变/古诗新解（板书讲课）</td><td>雀先生（眼镜麻雀）</td><td>黑板金 · 讲课</td><td>周更2-3</td></tr>
+  <tr><td><b>思想引擎号</b> 🆕</td><td><span class="badge">B站</span></td><td>古今思想逻辑拆现代争议（匿名：零人名零书名；单人推导/观点碰撞两种稿型）</td><td>待定</td><td>极简观念视觉 · 讲课/真视频</td><td>周更2</td></tr>
+  <tr><td><b>知识干货号</b></td><td><span class="badge">小红书</span></td><td>效率/方法论图文</td><td>—</td><td>奶油图卡</td><td>隔日更</td></tr>
+  <tr><td><b>AI科技号</b></td><td><span class="badge">小红书</span></td><td>AI工具实测/科技人话</td><td>—</td><td>深色科技图卡</td><td>隔日更</td></tr>
 </table>
+<div class="note">全部账号处于<b>冷启动期</b>（launch_phase）：前 20 篇极致垂直贴标签，判 flop 需 ≥10-15 支证据（起号手册纪律）。抖音/YouTube/X 平台手册已备，账号开通前先跑对标拆解。</div>
 </div>
 
-<h2>六、成本与红线速查</h2>
-<div class="card">
-<table>
-  <tr><th>产线</th><th>单件成本</th><th>月预算护栏</th></tr>
-  <tr><td>小红书图文</td><td>&lt; 0.5 元/篇</td><td rowspan="3">总额 1000-5000 元/月；每任务重试≤2次自动熔断</td></tr>
-  <tr><td>科普解说视频（P1c）</td><td>10-30 元/条</td></tr>
-  <tr><td>脑洞/短剧（P2）</td><td>50-500 元/条</td></tr>
-</table>
-<ul style="margin-top:12px">
-  <li>🚫 <b>不做全自动发布</b>（封号风险），永远你点最后一下；</li>
-  <li>🚫 不做真人 IP 二创（版权）、不接爬虫登录态工具（风控）；</li>
-  <li>⚠️ 所有对外内容必须带 AIGC 声明（发布指引里有提醒）。</li>
-</ul>
+<h2>三、你的日常</h2>
+<div class="steps">
+  <div class="step"><span class="who you">你·每天5-15分钟</span><b>审发布包</b><small>成片/封面/SRT/分区全备好，点传即发，勾 AIGC 声明，发完 published</small></div>
+  <div class="step"><span class="who you">你·随手</span><b>给审美反馈</b><small>「节奏快点」「封面字太大」——沉淀进对应账号档案与模块</small></div>
+  <div class="step"><span class="who you">你·每周15分钟</span><b>周复盘</b><small>报数据→定 verdict→我回填战绩、判实验、拆新对标、出下周选题池</small></div>
+  <div class="step"><span class="who ai">蜂群</span><b>其余一切</b><small>选题/研究/脚本/画面/质检/合成/封面/留痕/学习进化</small></div>
 </div>
+<div class="note">📌 你手上的三件套（激活全部能力）：① Pexels API key（免费，实拍素材）② BGM 免版权曲目（freepd/Pixabay）③ 各平台账号注册。</div>
 
-<p class="foot">产物即协作 · 数据即审美 · 蓝图即共识<br>详细规范见 media-swarm 仓库 blueprint.md（v1.2）· 本页由主脑维护，架构变更时同步更新</p>
+<p class="foot">产物即协作 · 数据即审美 · 蓝图即共识 · 匿名思想只借逻辑<br>架构变更时由主脑同步更新本页 · v2 (2026-07)</p>
 </div>
 </body>
 </html>
