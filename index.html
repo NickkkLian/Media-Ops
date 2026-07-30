@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>媒体台账 Media Ops</title>
+<style>
+:root{
+  --bg:#F7F6F3; --card:#FFFFFF; --ink:#1F1D1A; --muted:#8A857C; --line:#E8E4DC;
+  --accent:#C4552A; --ok:#2E7D52; --warn:#B7791F; --bad:#B3392E; --dim:#9AA0A6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.55}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%}
+textarea{resize:vertical;min-height:64px}
+header{display:flex;align-items:center;gap:12px;padding:18px 22px;flex-wrap:wrap}
+header h1{font-size:22px;letter-spacing:1px}
+header .spacer{flex:1}
+.btn{padding:8px 16px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:500}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.small{padding:4px 10px;font-size:13px}
+#stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:0 22px 6px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat .v{font-size:24px;font-weight:700;margin-top:2px}
+.stat .k{color:var(--muted);font-size:13px}
+#filters{display:flex;gap:8px;align-items:center;padding:14px 22px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:13px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+#filters select{width:auto}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding:8px 22px 60px}
+.acc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:box-shadow .15s}
+.acc:hover{box-shadow:0 4px 18px rgba(0,0,0,.07)}
+.acc .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.acc .nm{font-weight:700;font-size:16px;flex:1}
+.badge{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.dot.active{background:var(--ok)} .dot.planning{background:var(--warn)} .dot.paused{background:var(--dim)} .dot.dead{background:var(--bad)}
+.acc .pos{color:var(--muted);font-size:13px;min-height:20px;margin-bottom:10px}
+.acc .nums{display:flex;gap:14px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+.acc .nums b{font-size:15px}
+.empty{color:var(--muted);padding:60px 22px;text-align:center;grid-column:1/-1}
+/* modal */
+#ovl{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:34px 14px;z-index:50}
+#ovl.show{display:flex}
+#modal{background:var(--card);border-radius:16px;max-width:760px;width:100%;padding:24px}
+#modal h2{font-size:18px;margin-bottom:16px}
+.frm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frm .full{grid-column:1/-1}
+.frm label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:4px}
+#modal .acts{display:flex;gap:10px;margin-top:18px}
+#modal .acts .del{color:var(--bad);margin-right:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12.5px}
+td input{padding:4px 6px;border-radius:6px}
+.mrow-del{color:var(--bad);font-size:15px}
+/* 成本页签：窄屏把条形列隐掉，把宽度让给模型名（375px 实测名字会折两行） */
+@media(max-width:520px){ td.cost-bar{display:none} }
+/* config */
+#cfg{max-width:520px;margin:40px auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;display:none}
+#cfg.show{display:block}
+#cfg .row{margin-bottom:12px}
+.notif{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 22px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+.notif.show{opacity:1;transform:translate(-50%,0)}
+.notif.err{background:var(--bad)} .notif.ok{background:var(--ok)}
+#dirty{color:var(--warn);font-size:13px;display:none}
+@media(max-width:640px){.frm{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1 data-i18n="title">媒体台账</h1>
+  <span id="dirty" data-i18n="unsaved">● 未保存</span>
+  <span class="spacer"></span>
+  <button class="btn primary" onclick="openAcc(null)" data-i18n="add">＋ 新增账号</button>
+  <button class="btn" onclick="ghSave()" data-i18n="save">保存</button>
+  <button class="btn" onclick="toggleCfg()">⚙️</button>
+  <button class="btn" onclick="toggleLang()">🌐</button>
+</header>
+
+<div id="cfg">
+  <div class="row"><label>Owner</label><input id="cfg-own"></div>
+  <div class="row"><label>Repo（私有数据仓库）</label><input id="cfg-rep" placeholder="Database"></div>
+  <div class="row"><label>Token</label><input id="cfg-tok" type="password"></div>
+  <div class="row"><label>Path</label><input id="cfg-pa" value="media-ops.json"></div>
+  <button class="btn primary" onclick="connect()" data-i18n="connect">连接</button>
+</div>
+
+<div id="app" style="display:none">
+  <div id="tabs" style="display:flex;gap:8px;padding:0 22px 10px">
+    <button class="chip on" data-tab="accounts" onclick="switchTab('accounts')">👥 <span data-i18n="t_acc">账号</span></button>
+    <button class="chip" data-tab="works" onclick="switchTab('works')">🎬 <span data-i18n="t_works">作品</span></button>
+    <button class="chip" data-tab="research" onclick="switchTab('research')">🔬 <span data-i18n="t_res">研究</span></button>
+    <button class="chip" data-tab="cost" onclick="switchTab('cost')">💰 <span data-i18n="t_cost">成本</span></button>
+  </div>
+  <div id="view-accounts">
+    <div id="stats"></div>
+    <div id="filters"></div>
+    <div id="grid"></div>
+  </div>
+  <div id="view-works" style="display:none;padding:0 22px 60px"></div>
+  <div id="view-research" style="display:none;padding:0 22px 60px"></div>
+  <div id="view-cost" style="display:none;padding:0 22px 60px"></div>
+</div>
+
+<div id="ovl" onclick="if(event.target===this)closeAcc()">
+  <div id="modal"></div>
+</div>
+<div class="notif" id="notif"></div>
+
+<script>
+/* ═══ 双语（pha-lang，跨页面共享）；存储枚举值不译，只译显示 ═══ */
+let lang=(()=>{try{return localStorage.getItem("pha-lang")==="en"?"en":"zh"}catch(e){return "zh"}})();
+const DICT={
+  title:["媒体台账","Media Ops"],unsaved:["● 未保存","● Unsaved"],add:["＋ 新增账号","＋ New account"],
+  t_acc:["账号","Accounts"],t_works:["作品","Works"],t_res:["研究","Research"],
+  w_none:["尚无作品记录（由鸟群 sync-ops 同步）","No works yet (synced by flock)"],
+  r_none:["尚无研究记录","No research yet"],
+  t_cost:["成本","Cost"],
+  c_none:["尚无模型调用记账（鸟群跑起来后由 sync-ops 同步）","No model-usage records yet (synced by flock)"],
+  c_intro:["模型调用消耗全留痕 · 只记 API 回报的真实用量；单价缺失的调用单列「未计价」，不按 0 计",
+           "Every model call, metered · real API-reported usage only; calls without a configured price are listed separately, never counted as zero"],
+  c_budget:["本月预算","Budget (mo.)"],c_spent:["本月已花","Spent (mo.)"],c_calls:["调用次数","Calls"],
+  c_total:["累计已计价","Total metered"],c_perhit:["每次命中成本","Cost per hit"],
+  c_trend:["近 6 个月","Last 6 months"],c_bymodel:["按模型","By model"],c_bykind:["按类型","By type"],
+  c_byaccount:["按账号","By account"],c_toptasks:["最贵的任务","Priciest tasks"],
+  c_verdict:["花钱 × 战绩","Spend × outcome"],c_prices:["当前单价表","Price table"],
+  c_unpriced:["未计价调用（补单价后可回溯重算）","Unpriced calls (fill in prices to recompute)"],
+  c_pending:["待评","Pending"],c_calls_n:["次","calls"],c_avg:["均价","Avg"],
+  c_nohit:["还没有 hit 评级，评级后这里会算每次命中成本","No hits graded yet — cost per hit appears once graded"],
+  k_chat:["文本","Text"],k_vlm:["判图","Vision QC"],k_image:["生图","Image"],k_video:["生视频","Video"],
+  c_soft:["已过警戒线","Over soft limit"],c_hard:["已到封顶（新任务已暂停）","Cap reached (new tasks paused)"],
+  c_off:["未设预算","No budget set"],c_unpricedNote:["实际支出高于此数","actual spend is higher"],
+  save:["保存","Save"],connect:["连接","Connect"],all:["全部","All"],
+  st_planning:["筹备","Planning"],st_active:["运营中","Active"],st_paused:["暂停","Paused"],st_dead:["停更","Dead"],
+  k_text:["图文","Posts"],k_video:["视频","Video"],k_mixed:["混合","Mixed"],
+  s_accounts:["账号","Accounts"],s_active:["运营中","Active"],s_cost:["本月成本","Cost (mo.)"],s_rev:["本月收益","Revenue (mo.)"],
+  fans:["粉丝","Fans"],cost:["成本","Cost"],rev:["收益","Rev."],
+  f_name:["账号名","Name"],f_id:["账号 id（与鸟群 accounts/ 对应）","Account id (matches flock accounts/)"],
+  f_platform:["平台","Platform"],f_kind:["形态","Kind"],f_category:["内容类型（知识/动画/带货…）","Category"],
+  f_status:["状态","Status"],f_url:["主页链接","Profile URL"],f_pos:["定位","Positioning"],
+  f_style:["风格","Style"],f_content:["内容方向","Content"],f_workflow:["Workflow（产线/技能/发布节奏）","Workflow"],
+  f_notes:["备注","Notes"],metrics:["月度数据","Monthly metrics"],
+  m_month:["月份","Month"],m_fans:["粉丝","Fans"],m_posts:["发文","Posts"],m_cost:["成本¥","Cost¥"],m_rev:["收益¥","Rev¥"],m_note:["备注","Note"],
+  addRow:["＋ 加一个月","＋ Add month"],ok:["确定","Save"],cancel:["取消","Cancel"],del:["删除账号","Delete"],
+  newAcc:["新增账号","New account"],editAcc:["编辑账号","Edit account"],
+  delConfirm:["确定删除该账号及其全部数据？","Delete this account and all its data?"],
+  savedGh:["已保存到 GitHub","Saved to GitHub"],connectFirst:["请先连接 GitHub","Connect GitHub first"],
+  needName:["账号名和 id 必填","Name and id are required"],idDup:["账号 id 已存在","Account id already exists"],
+  empty:["还没有账号，点右上「新增账号」开始","No accounts yet — click “New account” to start"]
+};
+const T=k=>(DICT[k]||[k,k])[lang==="en"?1:0];
+function applyStatic(){document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=T(el.dataset.i18n)});document.title=lang==="en"?"Media Ops":"媒体台账 Media Ops";}
+function toggleLang(){lang=lang==="zh"?"en":"zh";try{localStorage.setItem("pha-lang",lang)}catch(e){}applyStatic();render();if(S.work){renderWork();renderCost();}}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+const PLATFORMS=[["douyin","抖音","Douyin"],["xiaohongshu","小红书","RED"],["bilibili","B站","Bilibili"],["youtube","YouTube","YouTube"],["x","X","X"],["reddit","Reddit","Reddit"]];
+const pName=id=>{const p=PLATFORMS.find(x=>x[0]===id);return p?(lang==="en"?p[2]:p[1]):id};
+const KINDS=["text","video","mixed"], STATUSES=["planning","active","paused","dead"];
+const curMonth=()=>new Date().toISOString().slice(0,7);
+const today=()=>new Date().toISOString().slice(0,10);
+const fmtY=n=>"¥"+((+n||0).toLocaleString());
+
+let S={cfg:null,data:null,sha:null,dirty:false,work:null};
+let filter={platform:"",status:""};
+
+/* ═══ 作品/研究页签（鸟群留痕，只读；数据=media-ops-work.json 由 sync-ops 同步）═══ */
+function switchTab(t){
+  document.querySelectorAll("#tabs .chip").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  for(const v of ["accounts","works","research","cost"])
+    document.getElementById("view-"+v).style.display=(v===t?"":"none");
+  if(t!=="accounts"&&!S.work)loadWork();
+}
+async function loadWork(){
+  try{
+    const {owner,repo}=S.cfg;
+    const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/media-ops-work.json?_=${Date.now()}`);
+    S.work=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(f.content.replace(/\n/g,"")),c=>c.charCodeAt(0))));
+  }catch(e){S.work={works:[],research:[],experiments:[],cost:null};}
+  renderWork();
+  renderCost();
+}
+function renderWork(){
+  const w=S.work||{works:[],research:[],experiments:[]};
+  const expMap={};(w.experiments||[]).forEach(e=>expMap[e.exp_id]=e);
+  const vIcon={hit:"🔥",mid:"➖",flop:"🥶",nuked:"☠️"};
+  document.getElementById("view-works").innerHTML=
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">鸟群自产内容全留痕 · 更新 ${esc(w.updatedAt||"-")}（只读，数据来自生产账本）</div>`+
+    ((w.works||[]).length?w.works.slice().reverse().map(v=>{
+      const p=v.process||{};
+      const trace=[p.research_pack?"📚资料包":null,p.script_review?("✍️"+p.script_review):null,
+                   p.image_qc?("🛡"+p.image_qc):null,p.evidence_cards?("📎证据卡×"+p.evidence_cards):null]
+                  .filter(Boolean).join(" · ");
+      const exp=v.exp_id&&expMap[v.exp_id]?` <span class="badge">${esc(v.exp_id)}</span>`:"";
+      return `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <b>${esc(v.topic)}</b>
+          <span class="badge">@${esc(v.channel_id)}</span>
+          <span class="badge">${v.type==="bili_video"?"视频":"图文"}</span>${exp}
+          <span style="margin-left:auto;color:var(--muted);font-size:13px">¥${v.prod_cost_est_cny??"-"} · ${esc(v.created_at||"")}
+          ${v.verdict?(" · "+(vIcon[v.verdict]||"")+esc(v.verdict)):""}</span>
+        </div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px">模块：${(v.modules_used||[]).map(esc).join(" ")}${trace?("<br>过程："+trace):""}</div>
+      </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
+  document.getElementById("view-research").innerHTML=
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录）</div>`+
+    ((w.research||[]).length?w.research.slice().reverse().map(r=>
+      `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center"><span class="badge">${esc(r.kind)}</span><b>${esc(r.title)}</b></div>
+        ${r.summary?`<div style="color:var(--muted);font-size:13px;margin-top:6px">${esc(r.summary)}</div>`:""}
+      </div>`).join(""):`<div class="card">${T("r_none")}</div>`);
+}
+
+/* ═══ 成本页签（只读；数据=media-ops-work.json 的 cost 段，由鸟群 sync_ops 同步）
+   壳里不含任何数字/账号/单价——全部来自私有数据文件（公开壳零个人数据）═══ */
+const KIND_T=k=>DICT["k_"+k]?T("k_"+k):k;
+const money=n=>{const v=+n||0;return "¥"+(v>0&&v<0.01?v.toFixed(4):v.toLocaleString(undefined,{maximumFractionDigits:2}))};
+function bar(pct,color){return `<div style="height:8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden">
+  <div style="height:100%;width:${Math.max(0,Math.min(100,pct))}%;background:${color}"></div></div>`}
+function costTable(title,rows,nameFn){
+  if(!rows||!rows.length)return "";
+  const max=Math.max(...rows.map(r=>+r.cny||0),0.000001);
+  return `<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:8px">${title}</div>
+    <table><tbody>${rows.map(r=>`<tr>
+      <td style="width:42%">${esc(nameFn?nameFn(r.key):r.key)}</td>
+      <td style="width:14%;color:var(--muted)">${r.calls} ${T("c_calls_n")}</td>
+      <td style="width:16%;text-align:right"><b>${money(r.cny)}</b></td>
+      <td class="cost-bar">${bar(r.cny/max*100,"var(--accent)")}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function renderCost(){
+  const el=document.getElementById("view-cost");
+  if(!el)return;
+  const c=(S.work||{}).cost;
+  if(!c||!c.totals||!c.totals.calls){el.innerHTML=`<div class="card">${T("c_none")}</div>`;return;}
+  const b=c.budget||{},lvl=b.level||"off";
+  const color=lvl==="hard"?"var(--bad)":lvl==="soft"?"var(--warn)":"var(--ok)";
+  const capNote=lvl==="hard"?T("c_hard"):lvl==="soft"?T("c_soft"):lvl==="off"?T("c_off"):"";
+  const unp=c.totals.unpricedCalls;
+  const vIcon={hit:"🔥",mid:"➖",flop:"🥶",nuked:"☠️"};
+
+  const budgetCard=`<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <div style="font-weight:600">${T("c_budget")} ${esc(b.month||"")}</div>
+      <div style="margin-left:auto;font-size:22px;font-weight:700;color:${color}">${money(b.spent)}</div>
+      ${b.cap?`<div style="color:var(--muted)">/ ${money(b.cap)}${b.pct!=null?` · ${b.pct}%`:""}</div>`:""}
+    </div>
+    ${b.cap?`<div style="margin-top:10px">${bar(b.pct||0,color)}</div>`:""}
+    ${capNote?`<div style="margin-top:8px;color:${color};font-size:13px">${capNote}</div>`:""}
+  </div>`;
+
+  const stats=`<div id="stats" style="padding:0 0 12px">
+    <div class="stat"><div class="k">${T("c_total")}</div><div class="v">${money(c.totals.cny)}</div></div>
+    <div class="stat"><div class="k">${T("c_calls")}</div><div class="v">${c.totals.calls}</div></div>
+    <div class="stat"><div class="k">${T("c_perhit")}</div><div class="v">${c.costPerHit!=null?money(c.costPerHit):"—"}</div></div>
+  </div>`;
+
+  const trend=(c.months||[]).length?(()=>{const mx=Math.max(...c.months.map(m=>+m.cny||0),0.000001);
+    return `<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:10px">${T("c_trend")}</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;height:96px">${c.months.map(m=>
+        `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px" title="${m.calls} ${T("c_calls_n")}">
+          <div style="font-size:12px;color:var(--muted)">${money(m.cny)}</div>
+          <div style="width:100%;border-radius:6px 6px 0 0;background:var(--accent);opacity:.85;height:${Math.max(3,(+m.cny||0)/mx*58)}px"></div>
+          <div style="font-size:12px;color:var(--muted)">${esc(m.month.slice(2))}</div>
+        </div>`).join("")}</div></div>`})():"";
+
+  const verdict=(c.byVerdict||[]).length?`<div class="card" style="margin-bottom:12px">
+    <div style="font-weight:600;margin-bottom:8px">${T("c_verdict")}</div>
+    <table><tbody>${c.byVerdict.map(v=>`<tr>
+      <td style="width:34%">${v.verdict==="待评"?T("c_pending"):(vIcon[v.verdict]||"")+" "+esc(v.verdict)}</td>
+      <td style="width:20%;color:var(--muted)">${v.n} ${T("c_calls_n")}</td>
+      <td style="width:22%;text-align:right"><b>${money(v.cny)}</b></td>
+      <td style="color:var(--muted)">${T("c_avg")} ${money(v.avg)}</td></tr>`).join("")}</tbody></table>
+    ${c.costPerHit==null?`<div style="color:var(--muted);font-size:13px;margin-top:8px">${T("c_nohit")}</div>`:""}
+  </div>`:"";
+
+  const unpriced=(c.unpricedModels||[]).length?`<div class="card" style="margin-bottom:12px;border-color:var(--warn)">
+    <div style="font-weight:600;color:var(--warn);margin-bottom:6px">⚠️ ${T("c_unpriced")}</div>
+    ${c.unpricedModels.map(u=>`<div style="font-size:13px">${esc(u.key)} · ${u.calls} ${T("c_calls_n")}</div>`).join("")}
+  </div>`:"";
+
+  const prices=Object.keys(c.prices||{}).length?`<details class="card" style="margin-bottom:12px">
+    <summary style="font-weight:600;cursor:pointer">${T("c_prices")}</summary>
+    <table style="margin-top:10px"><tbody>${Object.entries(c.prices).map(([k,p])=>{
+      const bits=[];
+      if(p.input_per_mtok!=null)bits.push(`in ${p.input_per_mtok}`);
+      if(p.cache_read_per_mtok!=null)bits.push(`cache ${p.cache_read_per_mtok}`);
+      if(p.output_per_mtok!=null)bits.push(`out ${p.output_per_mtok}`);
+      if(p.per_image!=null)bits.push(`${p.per_image}/img`);
+      if(p.video_per_mtok!=null)bits.push(`video ${p.video_per_mtok}/M`);
+      return `<tr><td style="width:38%">${esc(k)}</td><td style="color:var(--muted)">${esc(bits.join(" · "))} ${esc(p.currency||"")}</td>
+        <td style="width:12%;text-align:right">${p.confirmed_by_owner?"✓":"?"}</td></tr>`}).join("")}</tbody></table></details>`:"";
+
+  el.innerHTML=`<div class="card" style="margin-bottom:12px;color:var(--muted);font-size:13px">${T("c_intro")}
+      ${unp?` · ⚠️ ${unp} ${T("c_calls_n")} ${T("c_unpricedNote")}`:""}</div>`
+    +budgetCard+stats+trend
+    +costTable(T("c_bymodel"),c.byModel)
+    +costTable(T("c_bykind"),c.byKind,KIND_T)
+    +costTable(T("c_byaccount"),c.byAccount)
+    +costTable(T("c_toptasks"),c.topTasks)
+    +verdict+unpriced+prices;
+}
+
+function mkData(){return {meta:{version:1,last_updated:today()},accounts:[]}}
+function markDirty(){S.dirty=true;document.getElementById("dirty").style.display="inline";try{localStorage.setItem("mediaops_cache",JSON.stringify(S.data))}catch(e){}}
+
+/* ═══ GitHub 同步（全家标准 idiom：UTF-8 安全 base64 + 409/422 取新 sha 重试一次）═══ */
+async function ghApi(url,opt={}){
+  const r=await fetch(url,{...opt,headers:{Authorization:`token ${S.cfg.token}`,Accept:"application/vnd.github+json",...(opt.headers||{})}});
+  if(!r.ok)throw new Error(`${r.status} ${(await r.text()).slice(0,120)}`);
+  return r.json();
+}
+async function ghLoad(){
+  const {owner,repo,path}=S.cfg;
+  const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?_=${Date.now()}`);
+  S.sha=f.sha;
+  S.data=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(f.content.replace(/\n/g,"")),c=>c.charCodeAt(0))));
+}
+async function ghSave(){
+  if(!S.cfg?.token){notify(T("connectFirst"),"err");return;}
+  S.data.meta.last_updated=today();
+  const bytes=new TextEncoder().encode(JSON.stringify(S.data,null,2));
+  let bin="";bytes.forEach(b=>bin+=String.fromCharCode(b));
+  const content=btoa(bin);
+  const {owner,repo,path}=S.cfg;
+  const url=`https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const mkBody=()=>{const b={message:`media-ops: update ${today()}`,content};if(S.sha)b.sha=S.sha;return JSON.stringify(b);};
+  try{
+    let res;
+    try{res=await ghApi(url,{method:"PUT",body:mkBody()});}
+    catch(e){
+      if(!/^(409|422)/.test(e.message))throw e;
+      const f=await ghApi(`${url}?_=${Date.now()}`).catch(()=>null);
+      S.sha=f?.sha||null;
+      res=await ghApi(url,{method:"PUT",body:mkBody()});
+    }
+    S.sha=res.content.sha;S.dirty=false;
+    document.getElementById("dirty").style.display="none";
+    notify(T("savedGh"),"ok");
+  }catch(e){notify("保存失败 Save failed: "+e.message,"err");}
+}
+
+/* ═══ 渲染 ═══ */
+function monthOf(a,m){return (a.metrics||[]).find(x=>x.month===m)}
+function latestFans(a){const ms=(a.metrics||[]).filter(x=>x.followers!==""&&x.followers!=null);return ms.length?(+ms[ms.length-1].followers||0):null}
+
+function render(){
+  const el=s=>document.getElementById(s);
+  const accs=S.data.accounts;
+  const cm=curMonth();
+  let cost=0,rev=0;
+  accs.forEach(a=>{const m=monthOf(a,cm);if(m){cost+=+m.cost||0;rev+=+m.revenue||0;}});
+  el("stats").innerHTML=[
+    [T("s_accounts"),accs.length],[T("s_active"),accs.filter(a=>a.status==="active").length],
+    [T("s_cost"),fmtY(cost)],[T("s_rev"),fmtY(rev)]
+  ].map(([k,v])=>`<div class="stat"><div class="k">${esc(String(k))}</div><div class="v">${esc(String(v))}</div></div>`).join("");
+
+  el("filters").innerHTML=
+    `<button class="chip ${filter.platform===""?"on":""}" onclick="setF('platform','')">${T("all")}</button>`+
+    PLATFORMS.map(p=>`<button class="chip ${filter.platform===p[0]?"on":""}" onclick="setF('platform','${p[0]}')">${esc(lang==="en"?p[2]:p[1])}</button>`).join("")+
+    `<select onchange="setF('status',this.value)">`+
+    `<option value="">${T("all")}</option>`+STATUSES.map(s=>`<option value="${s}" ${filter.status===s?"selected":""}>${T("st_"+s)}</option>`).join("")+`</select>`;
+
+  const list=accs.filter(a=>(!filter.platform||a.platform===filter.platform)&&(!filter.status||a.status===filter.status));
+  el("grid").innerHTML=list.length?list.map(a=>{
+    const m=monthOf(a,cm),fans=latestFans(a);
+    return `<div class="acc" onclick="openAcc('${esc(a.id)}')">
+      <div class="top"><span class="dot ${esc(a.status)}"></span><span class="nm">${esc(a.name)}</span>
+        <span class="badge">${esc(pName(a.platform))}</span><span class="badge">${T("k_"+(a.kind||"text"))}</span></div>
+      <div class="pos">${esc(a.positioning||"")}</div>
+      <div class="nums">
+        <span>${T("fans")} <b>${fans==null?"—":fans.toLocaleString()}</b></span>
+        <span>${T("cost")} <b>${m?fmtY(m.cost):"—"}</b></span>
+        <span>${T("rev")} <b>${m?fmtY(m.revenue):"—"}</b></span>
+      </div></div>`;
+  }).join(""):`<div class="empty">${T("empty")}</div>`;
+}
+function setF(k,v){filter[k]=v;render();}
+
+/* ═══ 账号编辑 ═══ */
+let editing=null;
+function openAcc(id){
+  editing=id?S.data.accounts.find(a=>a.id===id):null;
+  const a=editing||{id:"",name:"",platform:"xiaohongshu",kind:"text",category:"",status:"planning",
+    positioning:"",styleNotes:"",contentNotes:"",workflow:"",url:"",notes:"",metrics:[]};
+  const sel=(opts,cur,fmt)=>opts.map(o=>`<option value="${o}" ${o===cur?"selected":""}>${fmt(o)}</option>`).join("");
+  document.getElementById("modal").innerHTML=`
+    <h2>${editing?T("editAcc"):T("newAcc")}</h2>
+    <div class="frm">
+      <div><label>${T("f_name")}</label><input id="f-name" value="${esc(a.name)}"></div>
+      <div><label>${T("f_id")}</label><input id="f-id" value="${esc(a.id)}" ${editing?"readonly":""} placeholder="account-id"></div>
+      <div><label>${T("f_platform")}</label><select id="f-platform">${sel(PLATFORMS.map(p=>p[0]),a.platform,pName)}</select></div>
+      <div><label>${T("f_kind")}</label><select id="f-kind">${sel(KINDS,a.kind,k=>T("k_"+k))}</select></div>
+      <div><label>${T("f_category")}</label><input id="f-category" value="${esc(a.category)}"></div>
+      <div><label>${T("f_status")}</label><select id="f-status">${sel(STATUSES,a.status,s=>T("st_"+s))}</select></div>
+      <div class="full"><label>${T("f_url")}</label><input id="f-url" value="${esc(a.url)}"></div>
+      <div class="full"><label>${T("f_pos")}</label><input id="f-pos" value="${esc(a.positioning)}"></div>
+      <div class="full"><label>${T("f_style")}</label><textarea id="f-style">${esc(a.styleNotes)}</textarea></div>
+      <div class="full"><label>${T("f_content")}</label><textarea id="f-content">${esc(a.contentNotes)}</textarea></div>
+      <div class="full"><label>${T("f_workflow")}</label><textarea id="f-workflow">${esc(a.workflow)}</textarea></div>
+      <div class="full"><label>${T("f_notes")}</label><textarea id="f-notes">${esc(a.notes)}</textarea></div>
+      <div class="full"><label>${T("metrics")}</label>
+        <table><thead><tr><th>${T("m_month")}</th><th>${T("m_fans")}</th><th>${T("m_posts")}</th><th>${T("m_cost")}</th><th>${T("m_rev")}</th><th>${T("m_note")}</th><th></th></tr></thead>
+        <tbody id="mrows"></tbody></table>
+        <button class="btn small" style="margin-top:8px" onclick="addMRow()">${T("addRow")}</button>
+      </div>
+    </div>
+    <div class="acts">
+      ${editing?`<button class="del" onclick="delAcc()">${T("del")}</button>`:""}
+      <button class="btn" onclick="closeAcc()">${T("cancel")}</button>
+      <button class="btn primary" onclick="saveAcc()">${T("ok")}</button>
+    </div>`;
+  (a.metrics||[]).forEach(m=>addMRow(m));
+  if(!(a.metrics||[]).length)addMRow({month:curMonth()});
+  document.getElementById("ovl").classList.add("show");
+}
+function addMRow(m={}){
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td><input type="month" value="${esc(m.month||"")}" style="width:130px"></td>
+    <td><input type="number" value="${m.followers??""}" style="width:80px"></td>
+    <td><input type="number" value="${m.posts??""}" style="width:64px"></td>
+    <td><input type="number" value="${m.cost??""}" style="width:80px"></td>
+    <td><input type="number" value="${m.revenue??""}" style="width:80px"></td>
+    <td><input value="${esc(m.note||"")}"></td>
+    <td><button class="mrow-del" onclick="this.closest('tr').remove()">✕</button></td>`;
+  document.getElementById("mrows").appendChild(tr);
+}
+function collectMetrics(){
+  return [...document.querySelectorAll("#mrows tr")].map(tr=>{
+    const i=tr.querySelectorAll("input");
+    return {month:i[0].value,followers:i[1].value===""?"":+i[1].value,posts:i[2].value===""?"":+i[2].value,
+            cost:i[3].value===""?"":+i[3].value,revenue:i[4].value===""?"":+i[4].value,note:i[5].value};
+  }).filter(m=>m.month).sort((x,y)=>x.month<y.month?-1:1);
+}
+function saveAcc(){
+  const v=id=>document.getElementById(id).value.trim();
+  const name=v("f-name"),id=v("f-id");
+  if(!name||!id){notify(T("needName"),"err");return;}
+  if(!editing&&S.data.accounts.some(a=>a.id===id)){notify(T("idDup"),"err");return;}
+  const a=editing||{id,createdAt:today()};
+  Object.assign(a,{name,platform:v("f-platform"),kind:v("f-kind"),category:v("f-category"),status:v("f-status"),
+    url:v("f-url"),positioning:v("f-pos"),styleNotes:v("f-style"),contentNotes:v("f-content"),
+    workflow:v("f-workflow"),notes:v("f-notes"),metrics:collectMetrics(),updatedAt:today()});
+  if(!editing)S.data.accounts.push(a);
+  markDirty();closeAcc();render();
+}
+function delAcc(){
+  if(!confirm(T("delConfirm")))return;
+  S.data.accounts=S.data.accounts.filter(a=>a!==editing);
+  markDirty();closeAcc();render();
+}
+function closeAcc(){document.getElementById("ovl").classList.remove("show");editing=null;}
+
+/* ═══ 连接 & 启动 ═══ */
+function toggleCfg(){document.getElementById("cfg").classList.toggle("show");}
+async function connect(){
+  const v=id=>document.getElementById(id).value.trim();
+  const c={owner:v("cfg-own"),repo:v("cfg-rep")||"Database",token:v("cfg-tok"),path:v("cfg-pa")||"media-ops.json"};
+  try{localStorage.setItem("mediaops_cfg",JSON.stringify(c))}catch(e){}
+  S.cfg=c;
+  try{await ghLoad();}
+  catch(e){if(e.message.startsWith("404")){S.data=mkData();S.sha=null;}else{notify("连接失败 "+e.message,"err");return;}}
+  document.getElementById("cfg").classList.remove("show");
+  showApp();
+}
+function showApp(){document.getElementById("app").style.display="block";render();try{localStorage.setItem("mediaops_cache",JSON.stringify(S.data))}catch(e){}}
+let _nt;
+function notify(msg,type=""){const el=document.getElementById("notif");el.textContent=msg;el.className=`notif show ${type}`;clearTimeout(_nt);_nt=setTimeout(()=>el.classList.remove("show"),2600);}
+window.addEventListener("beforeunload",e=>{if(S.dirty){e.preventDefault();e.returnValue="";}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAcc();if((e.metaKey||e.ctrlKey)&&e.key==="s"){e.preventDefault();ghSave();}});
+
+applyStatic();
+(async()=>{
+  try{
+    const c=JSON.parse(localStorage.getItem("mediaops_cfg")||"{}");
+    /* [hub-portal] 从共享配置 pha-config 补全 owner/repo/token（仅填空缺，不覆盖已填，不改 path） */
+    try{var _pha=JSON.parse(localStorage.getItem("pha-config")||"null");if(_pha){if(!c.owner&&_pha.owner)c.owner=_pha.owner;if(!c.repo&&_pha.repo)c.repo=_pha.repo;if(!c.token&&_pha.token)c.token=_pha.token;}}catch(e){}
+    if(c.owner)document.getElementById("cfg-own").value=c.owner;
+    if(c.repo)document.getElementById("cfg-rep").value=c.repo;
+    if(c.token)document.getElementById("cfg-tok").value=c.token;
+    if(c.path)document.getElementById("cfg-pa").value=c.path;
+    /* 本地缓存秒开，连接后 ghLoad 覆盖 */
+    try{const cache=JSON.parse(localStorage.getItem("mediaops_cache")||"null");if(cache){S.data=cache;document.getElementById("app").style.display="block";render();}}catch(e){}
+    if(c.token&&c.owner){
+      S.cfg={owner:c.owner,repo:c.repo||"Database",token:c.token,path:c.path||"media-ops.json"};
+      try{await ghLoad();}catch(e){if(e.message.startsWith("404")){S.data=mkData();S.sha=null;}else throw e;}
+      showApp();
+    }else if(!S.data){document.getElementById("cfg").classList.add("show");}
+  }catch(e){console.warn("Auto-connect failed:",e);if(!S.data){document.getElementById("cfg").classList.add("show");}}
+})();
+</script>
+</body>
+</html>
