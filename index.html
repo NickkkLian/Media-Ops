@@ -100,7 +100,9 @@ td input{padding:4px 6px;border-radius:6px}
     <div id="grid"></div>
   </div>
   <div id="view-works" style="display:none;padding:0 22px 60px"></div>
-  <div id="view-research" style="display:none;padding:0 22px 60px"></div>
+  <div id="view-research" style="display:none;padding:0 22px 60px">
+    <div style="margin:0 0 10px"><button class="chip" onclick="S.work=null;loadWork();">🔄 重新取数</button></div>
+  </div>
   <div id="view-cost" style="display:none;padding:0 22px 60px"></div>
 </div>
 
@@ -170,7 +172,7 @@ function switchTab(t){
   document.querySelectorAll("#tabs .chip").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   for(const v of ["accounts","works","research","cost"])
     document.getElementById("view-"+v).style.display=(v===t?"":"none");
-  if(t!=="accounts"&&!S.work)loadWork();
+  if(t!=="accounts"&&(!S.work||S.work.loadError))loadWork();   // 上次失败就再试，别把失败缓存成"已加载"
 }
 async function loadWork(){
   try{
@@ -222,8 +224,11 @@ function renderWork(){
         <div style="color:var(--muted);font-size:13px;margin-top:6px">模块：${(v.modules_used||[]).map(esc).join(" ")}${trace?("<br>过程："+trace):""}</div>
       </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
   document.getElementById("view-research").innerHTML=
-    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录）</div>`+
+    `<div style="margin:0 0 10px"><button class="chip" onclick="S.work=null;loadWork();">🔄 重新取数</button></div>`+
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04c</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
     (w.loadError?`<div class="card" style="margin-bottom:10px;color:#c00;font-size:13px">⚠️ 数据没读到：${esc(w.loadError)}</div>`:"")+
+    (!w.updatedAt&&!w.loadError?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">⏳ 还没取过数据（点右上「重新取数」，或先在设置里连好 GitHub）</div>`:"")+
+    (w.updatedAt&&!(w.research||[]).length?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">✅ 数据读到了（${esc(w.updatedAt)}），但里面的研究是 0 项 —— 问题在数据侧不在页面</div>`:"")+
     ((w.research||[]).length?w.research.slice().reverse().map(r=>
       `<div class="card" style="margin-bottom:10px">
         <div style="display:flex;gap:8px;align-items:center"><span class="badge">${esc(r.kind)}</span><b>${esc(r.title)}</b></div>
