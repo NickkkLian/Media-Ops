@@ -232,7 +232,7 @@ function _renderWork(){
       </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
   document.getElementById("view-research").innerHTML=
     `<div style="margin:0 0 10px"><button class="chip" onclick="S.work=null;loadWork();">🔄 重新取数</button></div>`+
-    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04d</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04e</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
     (w.loadError?`<div class="card" style="margin-bottom:10px;color:#c00;font-size:13px">⚠️ 数据没读到：${esc(w.loadError)}</div>`:"")+
     (!w.updatedAt&&!w.loadError?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">⏳ 还没取过数据（点右上「重新取数」，或先在设置里连好 GitHub）</div>`:"")+
     (w.updatedAt&&!(w.research||[]).length?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">✅ 数据读到了（${esc(w.updatedAt)}），但里面的研究是 0 项 —— 问题在数据侧不在页面</div>`:"")+
@@ -286,6 +286,13 @@ function renderCost(){
     </div>
     ${b.cap?`<div style="margin-top:10px">${bar(b.pct||0,color)}</div>`:""}
     ${capNote?`<div style="margin-top:8px;color:${color};font-size:13px">${capNote}</div>`:""}
+    <!-- ⚠️ 两个口径都摆出来：当月平台账单永远滞后（每月 3 号才拉一次），
+         只显示一个数会让人以为"成本没更新"（2026-08-04 站长发现）。 -->
+    <div style="margin-top:8px;color:var(--muted);font-size:12.5px;line-height:1.7">
+      口径：${esc(b.source||"-")}<br>
+      自报账本 ${money(b.self_reported)}${b.platform_bill!=null?` · 平台账单（当月已出）${money(b.platform_bill)}`:" · 平台账单本月未导入"}
+      ${b.unpriced?` · 未计价 ${b.unpriced} 次`:""}
+    </div>
   </div>`;
 
   const stats=`<div id="stats" style="padding:0 0 12px">
