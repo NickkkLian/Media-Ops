@@ -176,7 +176,16 @@ async function loadWork(){
   try{
     const {owner,repo}=S.cfg;
     const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/media-ops-work.json?_=${Date.now()}`);
-    S.work=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(f.content.replace(/\n/g,"")),c=>c.charCodeAt(0))));
+    /* 🚨 Contents API 对 >1MB 的文件返回 content:"" —— 直接解析会当成「文件坏了」，整页空白。
+       拆解卡带全文之后这份数据就过线了（2026-08-04 实测 1.4MB），必须退回 blob API 取。
+       与其它 hub app 同一 idiom。*/
+    let raw=f.content;
+    if(!raw&&f.sha){
+      const b=await ghApi(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${f.sha}`);
+      raw=b.content;
+    }
+    if(!raw)throw new Error("仓库返回了空内容");
+    S.work=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw.replace(/\n/g,"")),c=>c.charCodeAt(0))));
   }catch(e){S.work={works:[],research:[],experiments:[],cost:null};}
   renderWork();
   renderCost();
@@ -208,7 +217,16 @@ function renderWork(){
     ((w.research||[]).length?w.research.slice().reverse().map(r=>
       `<div class="card" style="margin-bottom:10px">
         <div style="display:flex;gap:8px;align-items:center"><span class="badge">${esc(r.kind)}</span><b>${esc(r.title)}</b></div>
-        ${r.summary?`<div style="color:var(--muted);font-size:13px;margin-top:6px">${esc(r.summary)}</div>`:""}
+        ${r.summary?`<div style="color:var(--muted);font-size:13px;margin-top:6px;white-space:pre-wrap">${esc(r.summary)}</div>`:""}
+        ${(r.sections||[]).length?`<details style="margin-top:8px">
+          <summary style="cursor:pointer;color:var(--muted);font-size:13px">展开逐帧拆解（${r.sections.length} 节）</summary>
+          ${r.sections.map(s=>`<div style="margin-top:10px">
+            <div style="font-weight:600;font-size:13px">${esc(s.n)}. ${esc(s.name)}</div>
+            <div style="font-size:12.5px;line-height:1.65;white-space:pre-wrap;color:var(--muted);margin-top:4px">${esc(s.text)}</div>
+          </div>`).join("")}
+          ${r.body?`<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px">看原始卡全文</summary>
+            <div style="font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--muted);margin-top:6px">${esc(r.body)}</div></details>`:""}
+        </details>`:""}
       </div>`).join(""):`<div class="card">${T("r_none")}</div>`);
 }
 
