@@ -155,7 +155,8 @@ const DICT={
 const T=k=>(DICT[k]||[k,k])[lang==="en"?1:0];
 function applyStatic(){document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=T(el.dataset.i18n)});document.title=lang==="en"?"Media Ops":"媒体台账 Media Ops";}
 function toggleLang(){lang=lang==="zh"?"en":"zh";try{localStorage.setItem("pha-lang",lang)}catch(e){}applyStatic();render();if(S.work){renderWork();renderCost();}}
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){/* ⚠️ 2026-08-04：原来是 (s||'').replace，**传数字就抛 TypeError**，整个 renderWork 挂掉、页面一片空白且按钮像没反应。一律先转字符串。*/
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 const PLATFORMS=[["douyin","抖音","Douyin"],["xiaohongshu","小红书","RED"],["bilibili","B站","Bilibili"],["youtube","YouTube","YouTube"],["x","X","X"],["reddit","Reddit","Reddit"]];
 const pName=id=>{const p=PLATFORMS.find(x=>x[0]===id);return p?(lang==="en"?p[2]:p[1]):id};
@@ -201,7 +202,13 @@ async function loadWork(){
   renderWork();
   renderCost();
 }
-function renderWork(){
+function renderWork(){try{ _renderWork(); }catch(e){
+  /* 页面宁可显示错误也不要白屏——这次就是 renderWork 抛异常导致整页空白，还查了三轮 */
+  const el=document.getElementById("view-research");
+  if(el)el.innerHTML=`<div class="card" style="color:#c00">⚠️ 渲染出错：${String(e&&e.message||e)}</div>`;
+  console.error(e);
+}}
+function _renderWork(){
   const w=S.work||{works:[],research:[],experiments:[]};
   const expMap={};(w.experiments||[]).forEach(e=>expMap[e.exp_id]=e);
   const vIcon={hit:"🔥",mid:"➖",flop:"🥶",nuked:"☠️"};
@@ -225,7 +232,7 @@ function renderWork(){
       </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
   document.getElementById("view-research").innerHTML=
     `<div style="margin:0 0 10px"><button class="chip" onclick="S.work=null;loadWork();">🔄 重新取数</button></div>`+
-    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04c</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04d</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
     (w.loadError?`<div class="card" style="margin-bottom:10px;color:#c00;font-size:13px">⚠️ 数据没读到：${esc(w.loadError)}</div>`:"")+
     (!w.updatedAt&&!w.loadError?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">⏳ 还没取过数据（点右上「重新取数」，或先在设置里连好 GitHub）</div>`:"")+
     (w.updatedAt&&!(w.research||[]).length?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">✅ 数据读到了（${esc(w.updatedAt)}），但里面的研究是 0 项 —— 问题在数据侧不在页面</div>`:"")+
@@ -237,7 +244,7 @@ function renderWork(){
         ${(r.sections||[]).length?`<details style="margin-top:8px">
           <summary style="cursor:pointer;color:var(--muted);font-size:13px">展开逐帧拆解（${r.sections.length} 节）</summary>
           ${r.sections.map(s=>`<div style="margin-top:10px">
-            <div style="font-weight:600;font-size:13px">${esc(s.n)}. ${esc(s.name)}</div>
+            <div style="font-weight:600;font-size:13px">${s.n}. ${esc(s.name)}</div>
             <div style="font-size:12.5px;line-height:1.65;white-space:pre-wrap;color:var(--muted);margin-top:4px">${esc(s.text)}</div>
           </div>`).join("")}
         </details>`:""}
