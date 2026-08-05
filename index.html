@@ -232,7 +232,7 @@ function _renderWork(){
       </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
   document.getElementById("view-research").innerHTML=
     `<div style="margin:0 0 10px"><button class="chip" onclick="S.work=null;loadWork();">🔄 重新取数</button></div>`+
-    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04e</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
+    `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录） · 壳 <b>2026-08-04f</b> · 数据 ${esc(w.updatedAt||"-")} · 研究 ${(w.research||[]).length} 项</div>`+
     (w.loadError?`<div class="card" style="margin-bottom:10px;color:#c00;font-size:13px">⚠️ 数据没读到：${esc(w.loadError)}</div>`:"")+
     (!w.updatedAt&&!w.loadError?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">⏳ 还没取过数据（点右上「重新取数」，或先在设置里连好 GitHub）</div>`:"")+
     (w.updatedAt&&!(w.research||[]).length?`<div class="card" style="margin-bottom:10px;color:#c60;font-size:13px">✅ 数据读到了（${esc(w.updatedAt)}），但里面的研究是 0 项 —— 问题在数据侧不在页面</div>`:"")+
@@ -296,19 +296,35 @@ function renderCost(){
   </div>`;
 
   const stats=`<div id="stats" style="padding:0 0 12px">
-    <div class="stat"><div class="k">${T("c_total")}</div><div class="v">${money(c.totals.cny)}</div></div>
+    <div class="stat"><div class="k">${T("c_total")}</div><div class="v">${money(c.totalsBill!=null?c.totalsBill:c.totals.cny)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">账单口径 · 自报 ${money(c.totals.cny)}</div></div>
     <div class="stat"><div class="k">${T("c_calls")}</div><div class="v">${c.totals.calls}</div></div>
     <div class="stat"><div class="k">${T("c_perhit")}</div><div class="v">${c.costPerHit!=null?money(c.costPerHit):"—"}</div></div>
   </div>`;
 
-  const trend=(c.months||[]).length?(()=>{const mx=Math.max(...c.months.map(m=>+m.cny||0),0.000001);
-    return `<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:10px">${T("c_trend")}</div>
-      <div style="display:flex;gap:10px;align-items:flex-end;height:96px">${c.months.map(m=>
-        `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px" title="${m.calls} ${T("c_calls_n")}">
-          <div style="font-size:12px;color:var(--muted)">${money(m.cny)}</div>
-          <div style="width:100%;border-radius:6px 6px 0 0;background:var(--accent);opacity:.85;height:${Math.max(3,(+m.cny||0)/mx*58)}px"></div>
+  /* ⚠️ 月度趋势此前只画自报数（2026-08-04 站长问「七月怎么只有 8.43」）——
+     自报是**归属**口径（哪个任务花的），平台账单才是**金额**口径：7 月自报 ¥8.43 / 账单 ¥243.81，差 29 倍。
+     现在按月同时给两个数，并把平台账单的分产品明细折叠进去。*/
+  const mAmt=m=>(m.cny_bill!=null?+m.cny_bill:(+m.cny_self||+m.cny||0));
+  const trend=(c.months||[]).length?(()=>{const mx=Math.max(...c.months.map(mAmt),0.000001);
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="font-weight:600;margin-bottom:4px">${T("c_trend")}</div>
+      <div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">柱高＝平台账单（金额真相源）；括号内＝自报账本（只记我们代码里的调用点，天然偏低）</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;height:110px">${c.months.map(m=>
+        `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px" title="${m.calls} ${T("c_calls_n")}">
+          <div style="font-size:12px;color:var(--muted);text-align:center">${money(mAmt(m))}<br><span style="font-size:11px">(${money(+m.cny_self||+m.cny||0)})</span></div>
+          <div style="width:100%;border-radius:6px 6px 0 0;background:var(--accent);opacity:.85;height:${Math.max(3,mAmt(m)/mx*58)}px"></div>
           <div style="font-size:12px;color:var(--muted)">${esc(m.month.slice(2))}</div>
-        </div>`).join("")}</div></div>`})():"";
+        </div>`).join("")}</div>
+      ${c.months.slice().reverse().map(m=>`<details style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:13px">${esc(m.month)} · 账单 ${money(m.cny_bill!=null?m.cny_bill:0)} · 自报 ${money(+m.cny_self||+m.cny||0)} · ${m.calls} 次调用${m.unpriced?` · 未计价 ${m.unpriced}`:""}</summary>
+        ${(m.byPlatform||[]).length?(m.byPlatform||[]).map(pf=>`<div style="margin-top:6px;font-size:12.5px">
+          <b>${esc(pf.name)}</b> ${money(pf.cny)}
+          ${(pf.byProduct||[]).length?`<div style="color:var(--muted);padding-left:10px">${pf.byProduct.map(x=>`${esc(x.name)} ${money(x.cny)}`).join(" · ")}</div>`:""}
+        </div>`).join(""):`<div style="color:var(--muted);font-size:12.5px;margin-top:6px">该月还没导入平台账单</div>`}
+        ${m.note?`<div style="color:var(--muted);font-size:12px;margin-top:6px">${esc(m.note)}</div>`:""}
+      </details>`).join("")}
+      </div>`})():"";
 
   const verdict=(c.byVerdict||[]).length?`<div class="card" style="margin-bottom:12px">
     <div style="font-weight:600;margin-bottom:8px">${T("c_verdict")}</div>
