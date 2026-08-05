@@ -88,8 +88,8 @@ button,a,summary,label,[role="button"],[onclick]{
   <span class="spacer"></span>
   <button class="btn primary" onclick="openAcc(null)" data-i18n="add">＋ 新增账号</button>
   <button class="btn" onclick="ghSave()" data-i18n="save">保存</button>
-  <button class="btn" onclick="toggleCfg()">⚙️</button>
-  <button class="btn" onclick="toggleLang()">🌐</button>
+  <button aria-label="设置" class="btn" onclick="toggleCfg()">⚙️</button>
+  <button aria-label="切换语言" class="btn" onclick="toggleLang()">🌐</button>
 </header>
 
 <div id="cfg">
@@ -499,7 +499,7 @@ function addMRow(m={}){
     <td><input type="number" value="${m.cost??""}" style="width:80px"></td>
     <td><input type="number" value="${m.revenue??""}" style="width:80px"></td>
     <td><input value="${esc(m.note||"")}"></td>
-    <td><button class="mrow-del" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td><button aria-label="${T('删除这一行','Delete row')}" class="mrow-del" onclick="this.closest('tr').remove()">✕</button></td>`;
   document.getElementById("mrows").appendChild(tr);
 }
 function collectMetrics(){
