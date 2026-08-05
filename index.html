@@ -175,18 +175,27 @@ function switchTab(t){
 async function loadWork(){
   try{
     const {owner,repo}=S.cfg;
-    const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/media-ops-work.json?_=${Date.now()}`);
-    /* 🚨 Contents API 对 >1MB 的文件返回 content:"" —— 直接解析会当成「文件坏了」，整页空白。
-       拆解卡带全文之后这份数据就过线了（2026-08-04 实测 1.4MB），必须退回 blob API 取。
-       与其它 hub app 同一 idiom。*/
-    let raw=f.content;
-    if(!raw&&f.sha){
-      const b=await ghApi(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${f.sha}`);
+    /* 🚨 Contents API 有 1MB 上限，**过线是直接 403 抛错**（不是 200 + 空 content）——
+       所以回退必须**兜住抛错**，不能只判 content 为空。2026-08-04 踩过：
+       第一版把回退写在 200 分支里，结果 ghApi 先抛，研究页签整页空白。
+       取 sha 走目录列表（列表不受大小限制），再用 blob API 拿内容。*/
+    let raw=null;
+    try{
+      const f=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents/media-ops-work.json?_=${Date.now()}`);
+      raw=f.content||null;
+    }catch(_){}
+    if(!raw){
+      const dir=await ghApi(`https://api.github.com/repos/${owner}/${repo}/contents?_=${Date.now()}`);
+      const ent=(dir||[]).find(x=>x.name==="media-ops-work.json");
+      if(!ent)throw new Error("Database 根目录里找不到 media-ops-work.json");
+      const b=await ghApi(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${ent.sha}`);
       raw=b.content;
     }
     if(!raw)throw new Error("仓库返回了空内容");
     S.work=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(raw.replace(/\n/g,"")),c=>c.charCodeAt(0))));
-  }catch(e){S.work={works:[],research:[],experiments:[],cost:null};}
+  }catch(e){
+    S.work={works:[],research:[],experiments:[],cost:null,loadError:String(e&&e.message||e)};
+  }
   renderWork();
   renderCost();
 }
@@ -214,18 +223,18 @@ function renderWork(){
       </div>`;}).join(""):`<div class="card">${T("w_none")}</div>`);
   document.getElementById("view-research").innerHTML=
     `<div class="card" style="margin-bottom:10px;color:var(--muted);font-size:13px">拆解与研究（与自产内容分开记录）</div>`+
+    (w.loadError?`<div class="card" style="margin-bottom:10px;color:#c00;font-size:13px">⚠️ 数据没读到：${esc(w.loadError)}</div>`:"")+
     ((w.research||[]).length?w.research.slice().reverse().map(r=>
       `<div class="card" style="margin-bottom:10px">
         <div style="display:flex;gap:8px;align-items:center"><span class="badge">${esc(r.kind)}</span><b>${esc(r.title)}</b></div>
         ${r.summary?`<div style="color:var(--muted);font-size:13px;margin-top:6px;white-space:pre-wrap">${esc(r.summary)}</div>`:""}
+        ${r.intro?`<div style="font-size:12.5px;line-height:1.6;white-space:pre-wrap;color:var(--muted);margin-top:6px;padding-left:8px;border-left:2px solid var(--line)">${esc(r.intro)}</div>`:""}
         ${(r.sections||[]).length?`<details style="margin-top:8px">
           <summary style="cursor:pointer;color:var(--muted);font-size:13px">展开逐帧拆解（${r.sections.length} 节）</summary>
           ${r.sections.map(s=>`<div style="margin-top:10px">
             <div style="font-weight:600;font-size:13px">${esc(s.n)}. ${esc(s.name)}</div>
             <div style="font-size:12.5px;line-height:1.65;white-space:pre-wrap;color:var(--muted);margin-top:4px">${esc(s.text)}</div>
           </div>`).join("")}
-          ${r.body?`<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px">看原始卡全文</summary>
-            <div style="font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--muted);margin-top:6px">${esc(r.body)}</div></details>`:""}
         </details>`:""}
       </div>`).join(""):`<div class="card">${T("r_none")}</div>`);
 }
